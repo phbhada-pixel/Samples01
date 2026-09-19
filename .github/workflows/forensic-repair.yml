@@ -1,0 +1,268 @@
+name: Forensic Repair - NVBDCP Production
+
+on:
+  push:
+    branches:
+      - repair/nvbdcp-production
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: contains(github.event.head_commit.message, '[forensic-repair]') == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+
+      - name: Apply authoritative data-flow repairs
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          form = Path("Form.html")
+          text = form.read_text(encoding="utf-8")
+
+          marker = "<!-- Google Apps Script Client Bridge with Intelligent Backend / GitHub Pages Hybrid Execution -->"
+          start = text.find(marker)
+          if start < 0:
+              raise SystemExit("Forensic repair failed: legacy bridge marker not found")
+
+          script_start = text.find("<script>", start)
+          script_end = text.find("</script>", script_start)
+          style_start = text.find("<style>", script_end)
+
+          if script_start < 0 or script_end < 0 or style_start < 0:
+              raise SystemExit("Forensic repair failed: bridge boundaries not found")
+
+          clean_bridge = r'''<!-- Centralized PHC Bhada API Client: server.js is the authoritative data source -->
+  <script>
+    (function () {
+      "use strict";
+
+      const configuredBase =
+        (typeof window !== "undefined" && window.PHC_API_BASE_URL) ||
+        (document.querySelector('meta[name="phc-api-base-url"]')?.content || "").trim();
+
+      const API_BASE_URL = (configuredBase || window.location.origin).replace(/\/$/, "");
+      const RPC_URL = API_BASE_URL + "/api/rpc";
+      const MAX_RETRIES = 2;
+
+      async function apiCall(method, args = [], options = {}) {
+        if (!method || typeof method !== "string") {
+          throw new Error("RPC method name is required.");
+        }
+
+        let lastError = null;
+
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const response = await fetch(RPC_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({ method, args })
+            });
+
+            const raw = await response.text();
+            let payload = null;
+            try { payload = raw ? JSON.parse(raw) : null; } catch (_) {}
+
+            if (!response.ok) {
+              const message = payload?.error || raw || `RPC HTTP ${response.status}`;
+              const error = new Error(message);
+              error.status = response.status;
+              throw error;
+            }
+
+            if (payload?.error) {
+              throw new Error(payload.error);
+            }
+
+            return payload?.result !== undefined ? payload.result : payload;
+          } catch (error) {
+            lastError = error;
+            if (attempt < MAX_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+            }
+          }
+        }
+
+        throw lastError || new Error("RPC request failed.");
+      }
+
+      // Compatibility adapter for the existing UI. It does NOT implement a fallback,
+      // mock database, LocalStorage database, or direct Google Sheet writes.
+      window.apiCall = apiCall;
+
+      window.google = window.google || {};
+      window.google.script = window.google.script || {};
+
+      function makeRunner(successCb, failureCb) {
+        const runner = {
+          withSuccessHandler(cb) { return makeRunner(cb, failureCb); },
+          withFailureHandler(cb) { return makeRunner(successCb, cb); }
+        };
+
+        return new Proxy(runner, {
+          get(target, prop) {
+            if (prop in target) return target[prop];
+
+            return (...args) => {
+              apiCall(prop, args)
+                .then(result => {
+                  if (successCb) successCb(result);
+                })
+                .catch(error => {
+                  if (failureCb) failureCb(error);
+                  else console.error(`RPC ${prop} failed:`, error);
+                });
+            };
+          }
+        });
+      }
+
+      window.google.script.run = makeRunner();
+
+      window.addEventListener("unhandledrejection", event => {
+        if (event?.reason) console.error("Unhandled application error:", event.reason);
+      });
+    })();
+  </script>
+
+  '''
+
+          text = text[:start] + clean_bridge + text[style_start:]
+          form.write_text(text, encoding="utf-8")
+
+          server = Path("server.js")
+          s = server.read_text(encoding="utf-8")
+
+          old_sync = '''    let respData = null;
+    try {
+      respData = await response.json();
+    } catch (_) {}
+
+    googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
+    googleSheetConfig.syncStatus = 'थेट गुगल शीटमध्ये सुरक्षित जतन (Saved in Google Sheet)';
+    return { success: true, data: respData };'''
+
+          new_sync = '''    const rawText = await response.text();
+    let respData = null;
+    try {
+      respData = rawText ? JSON.parse(rawText) : null;
+    } catch (_) {}
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: respData?.message || respData?.error || rawText || `Google Sheet HTTP ${response.status}`,
+        status: response.status
+      };
+    }
+
+    if (respData && respData.success === false) {
+      return {
+        success: false,
+        error: respData.message || respData.error || 'Google Sheet webhook reported failure.',
+        data: respData
+      };
+    }
+
+    googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
+    googleSheetConfig.syncStatus = 'थेट गुगल शीटमध्ये सुरक्षित जतन (Saved in Google Sheet)';
+    saveDbToDisk();
+    return { success: true, data: respData, status: response.status };'''
+
+          if old_sync not in s:
+              raise SystemExit("Forensic repair failed: Google Sheet sync block not found")
+          s = s.replace(old_sync, new_sync, 1)
+
+          anchor = '''        // Direct Google Sheet Sync: Await webhook persistence'''
+          if anchor not in s:
+              raise SystemExit("Forensic repair failed: saveBsData/processForm persistence anchor not found")
+          s = s.replace(anchor, '''        // Persist the authoritative transaction before external synchronization.
+        saveDbToDisk();
+
+        // Direct Google Sheet Sync: Await webhook persistence''', 1)
+
+          old_syncall = '''        result = {
+          success: true,
+          message: syncRes.success
+            ? `गुगल शीटमध्ये ${bsDataEntry.length} नोंदी यशस्वीरित्या सिंक झाल्या!`
+            : `डेटा सिंक प्रक्रिया पूर्ण झाली (स्थिती: ${googleSheetConfig.syncStatus})`,
+          lastSyncTime: googleSheetConfig.lastSyncTime,
+          spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${googleSheetConfig.spreadsheetId}/edit`
+        };'''
+
+          new_syncall = '''        result = {
+          success: syncRes.success,
+          message: syncRes.success
+            ? `गुगल शीटमध्ये ${bsDataEntry.length} नोंदी यशस्वीरित्या सिंक झाल्या!`
+            : `गुगल शीट सिंक अयशस्वी: ${syncRes.error || googleSheetConfig.syncStatus || 'अज्ञात त्रुटी'}`,
+          sheetSynced: syncRes.success,
+          lastSyncTime: googleSheetConfig.lastSyncTime,
+          spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${googleSheetConfig.spreadsheetId}/edit`
+        };'''
+
+          if old_syncall not in s:
+              raise SystemExit("Forensic repair failed: syncAllToGoogleSheet response block not found")
+          s = s.replace(old_syncall, new_syncall, 1)
+
+          s = s.replace(
+              "calcProgSmears = priorMonths.reduce((s, x) => s + (parseInt(x.bloodSmears != null ? x.bloodSmears : (x.feverCases || 0)) || 0), 0);",
+              "calcProgSmears = priorMonths.reduce((s, x) => s + (parseInt(x.bloodSmears) || 0), 0);"
+          )
+
+          old_fallback = '''        let bloodSmears = monthObj.bloodSmears != null ? parseInt(monthObj.bloodSmears) : 0;
+        if (bloodSmears === 0 && opdSummary.monthlyTotal > 0) {
+          bloodSmears = opdSummary.monthlyTotal;
+        }'''
+          new_fallback = '''        // Blood smears are an independent official indicator.
+        // Never infer them from OPD/village totals.
+        const bloodSmears = monthObj.bloodSmears != null ? parseInt(monthObj.bloodSmears) : 0;'''
+          if old_fallback not in s:
+              raise SystemExit("Forensic repair failed: monthly blood-smear fallback not found")
+          s = s.replace(old_fallback, new_fallback, 1)
+
+          # Persist all known mutating RPCs centrally as a safety net.
+          persist_marker = '''    res.json({ result });
+'''
+          persist_insert = '''    const persistentRpcMethods = new Set([
+      'saveBsData', 'processForm', 'saveGoogleSheetConfig', 'syncAllToGoogleSheet',
+      'deleteBsEntry', 'clearAllTransactionData', 'saveMonthlyIndicators', 'saveMonthIndicators',
+      'saveSubcenter', 'deleteSubcenter', 'saveVillage', 'deleteVillage',
+      'saveEmployee', 'deleteEmployee', 'transferEmployee', 'updateEmployeeVillages',
+      'importMasterDataCsv', 'importMasterDataFromCsv', 'importBsDataEntryCsv',
+      'uploadBsDataCsv', 'importVillageDetailsCsv', 'uploadVillageDetailsCsv',
+      'importMonthMasterCsv', 'uploadMonthMasterCsv', 'saveMonthIndicators',
+      'seedInitialData', 'resetToDefaultData'
+    ]);
+    if (persistentRpcMethods.has(method)) {
+      saveDbToDisk();
+    }
+
+    res.json({ result });
+'''
+          if persist_marker not in s:
+              raise SystemExit("Forensic repair failed: RPC response marker not found")
+          s = s.replace(persist_marker, persist_insert, 1)
+
+          server.write_text(s, encoding="utf-8")
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check server.js
+          node --check data/store.js
+          node --check services/reports.js
+
+      - name: Commit repaired application
+        run: |
+          git config user.name "PHC Bhada Forensic Repair"
+          git config user.email "actions@users.noreply.github.com"
+          git add Form.html server.js
+          git diff --cached --quiet && echo "No changes required" && exit 0
+          git commit -m "fix: centralize NVBDCP data flow and persistence [forensic-repair]"
+          git push origin HEAD:repair/nvbdcp-production

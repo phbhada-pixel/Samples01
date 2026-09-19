@@ -367,8 +367,15 @@ async function triggerGoogleSheetSync(payload) {
     } catch (_) {}
 
     googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
+    if (!response.ok) {
+      googleSheetConfig.syncStatus = 'सिंक अयशस्वी';
+      saveDbToDisk();
+      return { success: false, error: (respData && (respData.error || respData.message)) || ('Google Sheet HTTP ' + response.status), status: response.status, data: respData };
+    }
+
     googleSheetConfig.syncStatus = 'थेट गुगल शीटमध्ये सुरक्षित जतन (Saved in Google Sheet)';
-    return { success: true, data: respData };
+    saveDbToDisk();
+    return { success: true, data: respData, status: response.status };
   } catch (err) {
     googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
     googleSheetConfig.syncStatus = 'सिंक नोंदणीकृत (स्थानिक प्रणालीमध्ये सुरक्षित)';
@@ -506,6 +513,8 @@ app.post('/api/rpc', async (req, res) => {
           }
         });
 
+        saveDbToDisk();
+
         // Direct Google Sheet Sync: Await webhook persistence
         let sheetSyncResult = { success: false };
         if (googleSheetConfig.webhookUrl) {
@@ -547,7 +556,7 @@ app.post('/api/rpc', async (req, res) => {
             const priorMonths = monthMaster.slice(0, idx + 1);
             const calcProgOpd = priorMonths.reduce((s, x) => s + (parseInt(x.newOpd) || 0), 0);
             const calcProgFever = priorMonths.reduce((s, x) => s + (parseInt(x.feverCases != null ? x.feverCases : 0) || 0), 0);
-            const calcProgSmears = priorMonths.reduce((s, x) => s + (parseInt(x.bloodSmears != null ? x.bloodSmears : (x.feverCases || 0)) || 0), 0);
+            const calcProgSmears = priorMonths.reduce((s, x) => s + (parseInt(x.bloodSmears) || 0), 0);
             const calcProgTreated = priorMonths.reduce((s, x) => s + (parseInt(x.treatedCases != null ? x.treatedCases : 0) || 0), 0);
             const calcProgCq = priorMonths.reduce((s, x) => s + (parseInt(x.chloroquineSpent) || 0), 0);
 
@@ -559,7 +568,7 @@ app.post('/api/rpc', async (req, res) => {
               progOpd: m.progNewOpd != null ? m.progNewOpd : calcProgOpd,
               feverCases: m.feverCases != null ? m.feverCases : 0,
               progFeverCases: m.progFeverCases != null ? m.progFeverCases : calcProgFever,
-              bloodSmears: m.bloodSmears != null ? m.bloodSmears : (m.feverCases || 0),
+              bloodSmears: m.bloodSmears != null ? m.bloodSmears : 0,
               progBloodSmears: m.progBloodSmears != null ? m.progBloodSmears : calcProgSmears,
               treatedCases: m.treatedCases != null ? m.treatedCases : 0,
               progTreatedCases: m.progTreatedCases != null ? m.progTreatedCases : calcProgTreated,
@@ -606,10 +615,11 @@ app.post('/api/rpc', async (req, res) => {
 
         const syncRes = await triggerGoogleSheetSync(payload);
         result = {
-          success: true,
+          success: syncRes.success,
           message: syncRes.success
             ? `गुगल शीटमध्ये ${bsDataEntry.length} नोंदी यशस्वीरित्या सिंक झाल्या!`
-            : `डेटा सिंक प्रक्रिया पूर्ण झाली (स्थिती: ${googleSheetConfig.syncStatus})`,
+            : `गुगल शीट सिंक अयशस्वी: ${syncRes.error || googleSheetConfig.syncStatus}`,
+          sheetSynced: syncRes.success,
           lastSyncTime: googleSheetConfig.lastSyncTime,
           spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${googleSheetConfig.spreadsheetId}/edit`
         };
@@ -735,10 +745,7 @@ app.post('/api/rpc', async (req, res) => {
         const feverCases = parseInt(monthObj.feverCases) || 0;
         const progFeverCases = monthObj.progFeverCases != null ? parseInt(monthObj.progFeverCases) : (priorFeverSum + feverCases);
 
-        let bloodSmears = monthObj.bloodSmears != null ? parseInt(monthObj.bloodSmears) : 0;
-        if (bloodSmears === 0 && opdSummary.monthlyTotal > 0) {
-          bloodSmears = opdSummary.monthlyTotal;
-        }
+        const bloodSmears = monthObj.bloodSmears != null ? parseInt(monthObj.bloodSmears) : 0;
         const progBloodSmears = monthObj.progBloodSmears != null ? parseInt(monthObj.progBloodSmears) : (priorSmearsSum + bloodSmears);
 
         const treatedCases = parseInt(monthObj.treatedCases) || 0;
@@ -765,10 +772,6 @@ app.post('/api/rpc', async (req, res) => {
             }
           }
         }
-        if (opdSummary.monthlyTotal > 0 && opdSmears === 0) {
-          opdSmears = opdSummary.monthlyTotal;
-        }
-
         const totalSmears = fieldSmears + opdSmears;
         const smearFeverCoverage = feverCases > 0 ? Math.round((bloodSmears / feverCases) * 100) : (bloodSmears > 0 ? 100 : 0);
         const treatmentCoverage = feverCases > 0 ? Math.round((treatedCases / feverCases) * 100) : (treatedCases > 0 ? 100 : 0);
@@ -1229,6 +1232,17 @@ app.post('/api/rpc', async (req, res) => {
       default:
         return res.status(400).json({ error: `अज्ञात मेथड (Unknown method): ${method}` });
     }
+
+    const persistentWriteMethods = new Set([
+      'saveBsData','processForm','saveGoogleSheetConfig','syncAllToGoogleSheet',
+      'deleteBsEntry','saveMonthlyIndicators','saveMonthIndicators','saveSubcenter',
+      'deleteSubcenter','saveVillage','deleteVillage','saveEmployee','deleteEmployee',
+      'transferEmployee','updateEmployeeVillages','importMasterDataCsv','importMasterDataFromCsv',
+      'importBsDataEntryCsv','uploadBsDataCsv','importVillageDetailsCsv','uploadVillageDetailsCsv',
+      'importMonthMasterCsv','uploadMonthMasterCsv','clearAllTransactionData',
+      'saveGithubConfig','seedInitialData','resetToDefaultData'
+    ]);
+    if (persistentWriteMethods.has(method)) saveDbToDisk();
 
     res.json({ result });
   } catch (err) {

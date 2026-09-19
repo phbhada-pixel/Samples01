@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="mr">
 <head>
-  <base target="_top">
+  <base target="_top">\n  <meta name="phc-api-base-url" content="">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,537 +13,92 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
   
-  <!-- Google Apps Script Client Bridge with Intelligent Backend / GitHub Pages Hybrid Execution -->
+  <!-- Centralized PHC API client: Express server is the only authoritative data path -->
   <script>
-    window.google = window.google || {};
-    window.google.script = window.google.script || {};
-    (function() {
-      const isStaticHosting = (typeof window !== 'undefined' && window.location && (
-        window.location.hostname.endsWith('github.io') ||
-        window.location.protocol === 'file:' ||
-        window.location.hostname.includes('github')
-      ));
+    (function () {
+      const queryApiBase = new URLSearchParams(window.location.search).get('api');
+      const configuredApiBase = window.PHC_API_BASE_URL || queryApiBase || '';
+      const API_BASE_URL = String(configuredApiBase).replace(/\\/$/, '');
 
-      let serverUnavailable = isStaticHosting;
-
-      // Local Client-Side In-Memory / LocalStorage Store for Standalone / GitHub Pages Mode
-      const STORAGE_PREFIX = 'phc_bhada_nvbdcp_';
-      function getLocalStore(key, defaultVal) {
-        try {
-          const item = localStorage.getItem(STORAGE_PREFIX + key);
-          return item ? JSON.parse(item) : defaultVal;
-        } catch (e) {
-          return defaultVal;
-        }
-      }
-      function setLocalStore(key, val) {
-        try {
-          localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val));
-        } catch (e) {}
+      function rpcUrl() {
+        return API_BASE_URL ? API_BASE_URL + '/api/rpc' : '/api/rpc';
       }
 
-      // Initial clean client-side state (No dummy data)
-      let clientBsData = getLocalStore('bsDataEntry', []);
-      let clientVillageDetails = getLocalStore('villageDetails', []);
-      let clientGoogleSheetConfig = getLocalStore('googleSheetConfig', {
-        spreadsheetId: "1QW9vQ943bT131102008741_b9e7cQ86z7pLzP9gX3e0r",
-        webhookUrl: "https://script.google.com/macros/s/AKfycbzx9eLKm6P2gQu2ub-vR_NdJaWAf3CKfweoThJd4polcFq2s03YIcZQqcdlhA-oqmxL/exec",
-        githubRepoUrl: "https://github.com/phcbhada/nvbdcp-malaria-management-system",
-        autoSync: true,
-        lastSyncTime: null,
-        syncStatus: "कनेक्टेड (Ready)"
-      });
-
-      // Client-Side RPC Handler for Standalone Mode / GitHub Pages
-      async function executeClientSideRpc(method, args) {
-        const monthsNames = [
-          "जानेवारी २०२६", "फेब्रुवारी २०२६", "मार्च २०२६", "एप्रिल २०२६",
-          "मे २०२६", "जून २०२६", "जुलै २०२६", "ऑगस्ट २०२६",
-          "सप्टेंबर २०२६", "ऑक्टोबर २०२६", "नोव्हेंबर २०२६", "डिसेंबर २०२६"
-        ];
-
-        switch (method) {
-          case 'getMasterData': {
-            const mData = (typeof defaultMasterData !== 'undefined' && defaultMasterData.length) ? defaultMasterData : [];
-            return { result: mData };
-          }
-
-          case 'getMonthListForWebApp': {
-            const list = monthsNames.map((m, idx) => ({
-              monthName: m,
-              monthIndex: idx,
-              year: 2026,
-              isActive: idx === 8
-            }));
-            return { result: list };
-          }
-
-          case 'getAllTablesData': {
-            const mData = (typeof defaultMasterData !== 'undefined' && defaultMasterData.length) ? defaultMasterData : [];
-            const subcenters = ["आलमला", "भादा", "खडकउमरा", "माकणी", "तावशीगड", "वडजी"].map((name, i) => ({
-              id: i + 1,
-              subcenterName: name,
-              totalVillages: name === 'भादा' ? 7 : (name === 'आलमला' ? 6 : (name === 'माकणी' ? 7 : 6)),
-              population: 4500 + i * 800,
-              mpwName: name === 'भादा' ? 'श्री. एस. व्ही. पाटील' : 'श्री. के. एम. शिंदे',
-              anmName: name === 'भादा' ? 'श्रीमती ए. पी. गायकवाड' : 'श्रीमती व्ही. एन. कांबळे'
-            }));
-
-            const empMaster = mData.map((e, idx) => ({
-              id: idx + 1,
-              employeeName: e.employeeName,
-              designation: e.designation,
-              category: e.designation.includes('ASHA') ? 'ASHA' : (e.designation.includes('ANM') ? 'ANM' : (e.designation.includes('MPW') ? 'MPW' : 'MO')),
-              bsCode: e.bsCode,
-              upkendra: e.upkendra,
-              villageList: e.villageList || [e.upkendra],
-              assignedVillagesCount: (e.villageList || []).length || 1,
-              mobile: "९४२xxxxxxx",
-              isActive: true
-            }));
-
-            return {
-              result: {
-                success: true,
-                subcenterMaster: subcenters,
-                villagesMaster: [],
-                employeeMaster: empMaster,
-                monthMaster: monthsNames.map((m, idx) => ({
-                  monthName: m,
-                  year: 2026,
-                  status: idx <= 8 ? 'पूर्ण (Active)' : 'प्रलंबित (Pending)',
-                  totalSmearsCollected: 0
-                })),
-                bsDataEntry: clientBsData,
-                villageDetails: clientVillageDetails,
-                transferHistory: [],
-                googleSheetConfig: clientGoogleSheetConfig
-              }
-            };
-          }
-
-          case 'getDashboardStats': {
-            let totalSmears = 0;
-            clientBsData.forEach(r => {
-              const count = parseInt(r[9] || r.total || 0, 10);
-              if (!isNaN(count)) totalSmears += count;
-            });
-            return {
-              result: {
-                success: true,
-                totalSlides: totalSmears,
-                totalFever: Math.round(totalSmears * 1.15),
-                totalSubcenters: 6,
-                totalStaff: 65,
-                recentEntries: clientBsData.slice(-10).reverse()
-              }
-            };
-          }
-
-          case 'getDashboardDataForYear': {
-            const data = monthsNames.map((m, idx) => ({
-              month: m,
-              monthShort: m.slice(0, 3),
-              slides: 0,
-              feverCases: 0,
-              positiveCases: 0
-            }));
-            return { result: { success: true, year: 2026, monthlyData: data } };
-          }
-
-          case 'getSelectedMonthIndicators': {
-            const [mName] = args;
-            return {
-              result: {
-                success: true,
-                monthName: mName || "सप्टेंबर २०२६",
-                totalSlides: 0,
-                activeSurveillance: 0,
-                passiveSurveillance: 0,
-                positiveCases: 0,
-                spr: "0.00%",
-                sfr: "0.00%",
-                api: "0.00"
-              }
-            };
-          }
-
-          case 'getImportantLinks': {
-            return {
-              result: {
-                success: true,
-                data: [
-                  {
-                    name: "GitHub Repository (प्रकल्प सोर्स कोड व दस्तऐवजीकरण)",
-                    desc: "PHC Bhada NVBDCP Malaria Management System GitHub ओपन सोर्स रिपॉझिटरी, इश्यू ट्रॅकर व रिलीज",
-                    url: clientGoogleSheetConfig.githubRepoUrl || "https://github.com/phcbhada/nvbdcp-malaria-management-system",
-                    icon: "🐙",
-                    isGithub: true
-                  },
-                  {
-                    name: "NVBDCP Official Portal",
-                    desc: "राष्ट्रीय कीटकजन्य रोग नियंत्रण कार्यक्रम, भारत सरकार अधिकृत पोर्टल",
-                    url: "https://nvbdcp.gov.in/",
-                    icon: "🦟"
-                  },
-                  {
-                    name: "सार्वजनिक आरोग्य विभाग, महाराष्ट्र",
-                    desc: "महाराष्ट्र शासन सार्वजनिक आरोग्य विभागाची अधिकृत वेबसाईट",
-                    url: "https://arogya.maharashtra.gov.in/",
-                    icon: "🏛️"
-                  },
-                  {
-                    name: "IHIP - एकात्मिक आरोग्य माहिती मंच",
-                    desc: "Integrated Health Information Platform (IDSP - ताप व साथीचे रोग सर्व्हेक्षण)",
-                    url: "https://ihip.nhp.gov.in/",
-                    icon: "📊"
-                  }
-                ]
-              }
-            };
-          }
-
-          case 'getGithubInfo': {
-            const repoUrl = clientGoogleSheetConfig.githubRepoUrl || "https://github.com/phcbhada/nvbdcp-malaria-management-system";
-            return {
-              result: {
-                success: true,
-                repoUrl: repoUrl,
-                cloneUrl: repoUrl.endsWith('.git') ? repoUrl : `${repoUrl}.git`,
-                issuesUrl: `${repoUrl.replace(/\/$/, '')}/issues`,
-                pullsUrl: `${repoUrl.replace(/\/$/, '')}/pulls`,
-                releasesUrl: `${repoUrl.replace(/\/$/, '')}/releases`,
-                readmeUrl: `${repoUrl.replace(/\/$/, '')}#readme`
-              }
-            };
-          }
-
-          case 'saveGithubConfig': {
-            const [url] = args;
-            if (url && typeof url === 'string') {
-              clientGoogleSheetConfig.githubRepoUrl = url.trim();
-              setLocalStore('googleSheetConfig', clientGoogleSheetConfig);
-              return { success: true, message: 'GitHub URL सेव्ह झाली!', repoUrl: clientGoogleSheetConfig.githubRepoUrl };
-            }
-            return { success: false, message: 'अवैध URL' };
-          }
-
-          case 'saveGoogleSheetConfig': {
-            const [cfg] = args;
-            if (cfg) {
-              if (cfg.spreadsheetId) clientGoogleSheetConfig.spreadsheetId = cfg.spreadsheetId.trim();
-              if (cfg.webhookUrl) clientGoogleSheetConfig.webhookUrl = cfg.webhookUrl.trim();
-              if (cfg.githubRepoUrl) clientGoogleSheetConfig.githubRepoUrl = cfg.githubRepoUrl.trim();
-              if (typeof cfg.autoSync === 'boolean') clientGoogleSheetConfig.autoSync = cfg.autoSync;
-              setLocalStore('googleSheetConfig', clientGoogleSheetConfig);
-            }
-            return { result: { success: true, message: 'गुगल शीट सेटिंग्ज सेव्ह झाल्या!', config: clientGoogleSheetConfig } };
-          }
-
-          case 'processForm': {
-            const [formDataArray] = args;
-            const entries = Array.isArray(formDataArray) ? formDataArray : (formDataArray ? [formDataArray] : []);
-            if (!entries.length) return { result: { success: false, message: 'अवैध किंवा रिकामा फॉर्म डेटा.' } };
-
-            const newEntriesForSync = [];
-            const newVillageDetailsForSync = [];
-
-            entries.forEach(entry => {
-              const dateObj = entry.bsSendDate ? new Date(entry.bsSendDate) : new Date();
-              const yyyymmdd = `${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}`;
-              const uniqueId = `BS_${yyyymmdd}_${entry.bsCode || '0'}_${Date.now()}`;
-              const total = (parseInt(entry.paraynt) || 0) - (parseInt(entry.pasun) || 0) + 1;
-
-              const row = [
-                uniqueId,
-                dateObj.toISOString().slice(0, 10),
-                entry.upkendra || '',
-                entry.employeeName || '',
-                entry.designation || '',
-                entry.bsCode || '',
-                entry.bundleNumber || 'B_1',
-                parseInt(entry.pasun) || 0,
-                parseInt(entry.paraynt) || 0,
-                total
-              ];
-
-              clientBsData.unshift(row);
-
-              newEntriesForSync.push({
-                id: uniqueId,
-                date: dateObj.toISOString().slice(0, 10),
-                upkendra: entry.upkendra || '',
-                employeeName: entry.employeeName || '',
-                designation: entry.designation || '',
-                bsCode: entry.bsCode || '',
-                bundleNumber: entry.bundleNumber || '',
-                pasun: parseInt(entry.pasun) || 0,
-                paraynt: parseInt(entry.paraynt) || 0,
-                total: total
-              });
-
-              const vDetails = Array.isArray(entry.villageDetails) ? entry.villageDetails : (Array.isArray(entry.villageRows) ? entry.villageRows : []);
-              if (vDetails.length > 0) {
-                vDetails.forEach(vr => {
-                  clientVillageDetails.unshift([
-                    uniqueId,
-                    entry.employeeName || '',
-                    dateObj.toISOString().slice(0, 10),
-                    vr.villageName || '',
-                    parseInt(vr.sampleCount) || 0,
-                    parseInt(vr.maleCount) || 0,
-                    parseInt(vr.femaleCount) || 0,
-                    entry.upkendra || ''
-                  ]);
-                  newVillageDetailsForSync.push({
-                    uniqueId: uniqueId,
-                    employeeName: entry.employeeName || '',
-                    date: dateObj.toISOString().slice(0, 10),
-                    villageName: vr.villageName || '',
-                    sampleCount: parseInt(vr.sampleCount) || 0,
-                    maleCount: parseInt(vr.maleCount) || 0,
-                    femaleCount: parseInt(vr.femaleCount) || 0,
-                    upkendra: entry.upkendra || ''
-                  });
-                });
-              }
-            });
-
-            setLocalStore('bsDataEntry', clientBsData);
-            setLocalStore('villageDetails', clientVillageDetails);
-
-            // Direct Sync with Google Sheet Webhook
-            if (clientGoogleSheetConfig.webhookUrl) {
-              try {
-                fetch(clientGoogleSheetConfig.webhookUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'appendEntries',
-                    spreadsheetId: clientGoogleSheetConfig.spreadsheetId,
-                    entries: newEntriesForSync,
-                    villageDetails: newVillageDetailsForSync,
-                    timestamp: new Date().toISOString()
-                  })
-                }).catch(e => console.warn('Google Sheet Webhook silent catch:', e));
-              } catch (e) {}
-            }
-
-            return {
-              result: {
-                success: true,
-                message: '✅ डेटा थेट गुगल शीट व स्थानिक प्रणालीमध्ये सुरक्षित सेव्ह झाला!',
-                sheetUrl: `https://docs.google.com/spreadsheets/d/${clientGoogleSheetConfig.spreadsheetId}/edit`
-              }
-            };
-          }
-
-          case 'saveMonthlyIndicators':
-          case 'saveMonthIndicators': {
-            const [indicatorData] = args;
-            if (!indicatorData || !indicatorData.monthName) {
-              return { result: { success: false, message: 'महिन्याचे नाव आवश्यक आहे.' } };
-            }
-
-            // Sync to Google Sheet webhook
-            if (clientGoogleSheetConfig.webhookUrl) {
-              try {
-                fetch(clientGoogleSheetConfig.webhookUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'saveMonthIndicators',
-                    spreadsheetId: clientGoogleSheetConfig.spreadsheetId,
-                    monthName: indicatorData.monthName,
-                    indicators: indicatorData,
-                    timestamp: new Date().toISOString()
-                  })
-                }).catch(e => console.warn('Google Sheet Webhook silent catch:', e));
-              } catch (e) {}
-            }
-
-            return {
-              result: {
-                success: true,
-                message: `✅ माहे ${indicatorData.monthName} चे मासिक अहवाल निर्देशांक थेट गुगल शीटमध्ये सुरक्षित जतन झाले!`
-              }
-            };
-          }
-
-          case 'saveBsData': {
-            const [data] = args;
-            if (!data) return { result: { success: false, message: 'डेटा उपलब्ध नाही.' } };
-
-            const uniqueId = `BS_${Date.now()}`;
-            const row = [
-              uniqueId,
-              new Date().toISOString().slice(0, 10),
-              data.upkendra || '',
-              data.employeeName || '',
-              data.designation || '',
-              data.bsCode || '',
-              data.bundleNumber || 'B_1',
-              data.pasun || 1,
-              data.paraynt || (data.villageRows ? data.villageRows.reduce((s, r) => s + (parseInt(r.sampleCount) || 0), 0) : 1),
-              data.villageRows ? data.villageRows.reduce((s, r) => s + (parseInt(r.sampleCount) || 0), 0) : 1
-            ];
-
-            clientBsData.unshift(row);
-            setLocalStore('bsDataEntry', clientBsData);
-
-            if (data.villageRows && Array.isArray(data.villageRows)) {
-              data.villageRows.forEach(vr => {
-                clientVillageDetails.unshift([
-                  uniqueId,
-                  data.employeeName || '',
-                  new Date().toISOString().slice(0, 10),
-                  vr.villageName || '',
-                  parseInt(vr.sampleCount) || 0,
-                  parseInt(vr.maleCount) || 0,
-                  parseInt(vr.femaleCount) || 0,
-                  data.upkendra || ''
-                ]);
-              });
-              setLocalStore('villageDetails', clientVillageDetails);
-            }
-
-            // Sync with direct Google Sheet Webhook if configured
-            if (clientGoogleSheetConfig.webhookUrl && clientGoogleSheetConfig.autoSync) {
-              try {
-                fetch(clientGoogleSheetConfig.webhookUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'saveBsData', data: data, timestamp: new Date().toISOString() })
-                }).catch(e => console.warn('Google Sheet Webhook silent catch:', e));
-              } catch (e) {}
-            }
-
-            return { result: { success: true, message: 'रक्त नमुना नोंद यशस्वीरित्या जतन झाली!' } };
-          }
-
-          case 'deleteBsRecord': {
-            const [id] = args;
-            clientBsData = clientBsData.filter(r => r[0] !== id && r.id !== id);
-            clientVillageDetails = clientVillageDetails.filter(r => r[0] !== id && r.id !== id);
-            setLocalStore('bsDataEntry', clientBsData);
-            setLocalStore('villageDetails', clientVillageDetails);
-            return { result: { success: true, message: 'नोंद यशस्वीरित्या हटवली!' } };
-          }
-
-          case 'clearAllTransactionData': {
-            clientBsData = [];
-            clientVillageDetails = [];
-            setLocalStore('bsDataEntry', []);
-            setLocalStore('villageDetails', []);
-            return { result: { success: true, message: 'सर्व नोंदी यशस्वीरित्या रिकाम्या करण्यात आल्या.' } };
-          }
-
-          default: {
-            return { result: { success: true, message: 'क्रिया यशस्वी' } };
-          }
+      async function apiCall(method, args = [], options = {}) {
+        if (!method || typeof method !== 'string') {
+          throw new Error('API method is required.');
         }
+
+        const response = await fetch(rpcUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ method, args }),
+          signal: options.signal
+        });
+
+        let payload = null;
+        try { payload = await response.json(); }
+        catch (_) { payload = null; }
+
+        if (!response.ok) {
+          const message = payload?.error || payload?.message || ('Server error: ' + response.status);
+          throw new Error(message);
+        }
+
+        if (payload?.error) throw new Error(payload.error);
+        return payload?.result !== undefined ? payload.result : payload;
       }
 
-      async function executeRpcWithRetry(prop, args, maxRetries = 2) {
-        if (serverUnavailable) {
-          return await executeClientSideRpc(prop, args);
-        }
-
-        const rpcUrl = (typeof window !== 'undefined' && window.location && window.location.origin)
-          ? `${window.location.origin}/api/rpc`
-          : '/api/rpc';
-
-        let lastErr = null;
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            const response = await fetch(rpcUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ method: prop, args: args })
-            });
-
-            if (!response.ok) {
-              if (response.status === 404) {
-                // Static server / GitHub Pages detected - fall back to client runner
-                serverUnavailable = true;
-                return await executeClientSideRpc(prop, args);
-              }
-              const errText = await response.text();
-              throw new Error(errText || `Server error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data;
-          } catch (err) {
-            lastErr = err;
-            if (isStaticHosting || (err && err.message && err.message.includes('Failed to fetch'))) {
-              serverUnavailable = true;
-              return await executeClientSideRpc(prop, args);
-            }
-            if (attempt < maxRetries) {
-              const backoffMs = attempt * 300;
-              await new Promise(r => setTimeout(r, backoffMs));
-            }
-          }
-        }
-
-        // Fallback to client side if server fails
-        serverUnavailable = true;
-        return await executeClientSideRpc(prop, args);
-      }
+      window.apiCall = apiCall;
+      window.PHC_API_BASE_URL = API_BASE_URL;
 
       function showNetworkToast(msg) {
-        if (typeof document === 'undefined' || !document.body) return;
+        if (!document.body) return;
         let toast = document.getElementById('globalNetworkToast');
         if (!toast) {
           toast = document.createElement('div');
           toast.id = 'globalNetworkToast';
-          toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:#2d3748; color:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:9999; display:flex; align-items:center; gap:12px; font-size:14px;';
+          toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#2d3748;color:#fff;padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9999;display:flex;align-items:center;gap:12px;font-size:14px;';
           document.body.appendChild(toast);
         }
-        toast.innerHTML = `<span>ℹ️ ${msg}</span><button onclick="this.parentElement.remove()" style="background:transparent; border:none; color:#fff; cursor:pointer; font-weight:bold; font-size:16px;">✕</button>`;
-        setTimeout(() => {
-          if (toast && toast.parentElement) toast.remove();
-        }, 4000);
+        toast.innerHTML = '<span>ℹ️ ' + String(msg) + '</span><button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#fff;cursor:pointer;font-weight:bold;font-size:16px">✕</button>';
+        setTimeout(() => toast?.parentElement && toast.remove(), 4000);
       }
+      window.showNetworkToast = showNetworkToast;
 
+      /*
+       * Compatibility adapter for the existing UI event handlers.
+       * It contains NO mock data, LocalStorage, client database, Google webhook,
+       * or fallback runner. Every call goes through apiCall() -> /api/rpc.
+       */
       function makeRunner(successCb, failureCb) {
         const obj = {
-          withSuccessHandler(cb) {
-            return makeRunner(cb, failureCb);
-          },
-          withFailureHandler(cb) {
-            return makeRunner(successCb, cb);
-          }
+          withSuccessHandler(cb) { return makeRunner(cb, failureCb); },
+          withFailureHandler(cb) { return makeRunner(successCb, cb); }
         };
         return new Proxy(obj, {
           get(target, prop) {
             if (prop in target) return target[prop];
-            return function(...args) {
-              executeRpcWithRetry(prop, args, 2)
-                .then(data => {
-                  if (data && data.error) {
-                    if (failureCb) failureCb(new Error(data.error));
-                    else console.error('RPC Error:', data.error);
-                  } else if (successCb) {
-                    successCb(data ? (data.result !== undefined ? data.result : data) : null);
-                  }
-                })
+            return function (...args) {
+              apiCall(String(prop), args)
+                .then(result => successCb && successCb(result))
                 .catch(err => {
-                  if (failureCb) {
-                    failureCb(err);
-                  } else {
-                    console.warn(`RPC Call Notice (${prop}):`, err.message || err);
-                  }
+                  if (failureCb) failureCb(err);
+                  else console.error('RPC Error:', err);
+                  showNetworkToast('सर्व्हर त्रुटी: ' + (err.message || err));
                 });
             };
           }
         });
       }
+
+      // Backward-compatible UI adapter; transport and data remain centralized in apiCall().
+      window.google = window.google || {};
+      window.google.script = window.google.script || {};
       window.google.script.run = makeRunner();
+
+      window.addEventListener('offline', () => showNetworkToast('इंटरनेट/सर्व्हर कनेक्शन उपलब्ध नाही.'));
+      window.addEventListener('online', () => showNetworkToast('कनेक्शन पुन्हा उपलब्ध झाले.'));
     })();
   </script>
   
