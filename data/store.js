@@ -3373,6 +3373,13 @@ export function importMonthMasterCsv(csvText) {
 
 export const importantLinks = [
   {
+    name: "GitHub Repository (प्रकल्प सोर्स कोड व दस्तऐवजीकरण)",
+    desc: "PHC Bhada NVBDCP Malaria Management System GitHub ओपन सोर्स रिपॉझिटरी, इश्यू ट्रॅकर व रिलीज",
+    url: process.env.GITHUB_REPO_URL || "https://github.com/phcbhada/nvbdcp-malaria-management-system",
+    icon: "🐙",
+    isGithub: true
+  },
+  {
     name: "NVBDCP Official Portal",
     desc: "राष्ट्रीय कीटकजन्य रोग नियंत्रण कार्यक्रम, भारत सरकार अधिकृत पोर्टल",
     url: "https://nvbdcp.gov.in/",
@@ -3511,6 +3518,7 @@ export const generatedReports = new Map();
 export const googleSheetConfig = {
   spreadsheetId: process.env.GOOGLE_SHEET_ID || "1QW9vQ943bT131102008741_b9e7cQ86z7pLzP9gX3e0r",
   webhookUrl: process.env.GOOGLE_SHEET_WEBHOOK_URL || "https://script.google.com/macros/s/AKfycbzx9eLKm6P2gQu2ub-vR_NdJaWAf3CKfweoThJd4polcFq2s03YIcZQqcdlhA-oqmxL/exec",
+  githubRepoUrl: process.env.GITHUB_REPO_URL || "https://github.com/phcbhada/nvbdcp-malaria-management-system",
   autoSync: true,
   lastSyncTime: null,
   syncStatus: "कनेक्टेड (Ready)"

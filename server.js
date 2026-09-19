@@ -545,11 +545,16 @@ app.post('/api/rpc', async (req, res) => {
         if (config) {
           if (config.spreadsheetId) googleSheetConfig.spreadsheetId = config.spreadsheetId.trim();
           if (config.webhookUrl) googleSheetConfig.webhookUrl = config.webhookUrl.trim();
+          if (config.githubRepoUrl) {
+            googleSheetConfig.githubRepoUrl = config.githubRepoUrl.trim();
+            const ghLink = importantLinks.find(l => l.isGithub || l.name.includes("GitHub"));
+            if (ghLink) ghLink.url = googleSheetConfig.githubRepoUrl;
+          }
           if (typeof config.autoSync === 'boolean') googleSheetConfig.autoSync = config.autoSync;
         }
         result = {
           success: true,
-          message: 'गुगल शीट सेटिंग्ज यशस्वीरित्या अपडेट करण्यात आल्या!',
+          message: 'गुगल शीट व GitHub सेटिंग्ज यशस्वीरित्या अपडेट करण्यात आल्या!',
           config: googleSheetConfig
         };
         break;
@@ -792,6 +797,37 @@ app.post('/api/rpc', async (req, res) => {
 
       case 'getImportantLinks': {
         result = { success: true, data: importantLinks };
+        break;
+      }
+
+      case 'getGithubInfo': {
+        const repoUrl = googleSheetConfig.githubRepoUrl || "https://github.com/phcbhada/nvbdcp-malaria-management-system";
+        result = {
+          success: true,
+          repoUrl: repoUrl,
+          cloneUrl: repoUrl.endsWith('.git') ? repoUrl : `${repoUrl}.git`,
+          issuesUrl: `${repoUrl.replace(/\/$/, '')}/issues`,
+          pullsUrl: `${repoUrl.replace(/\/$/, '')}/pulls`,
+          releasesUrl: `${repoUrl.replace(/\/$/, '')}/releases`,
+          readmeUrl: `${repoUrl.replace(/\/$/, '')}#readme`
+        };
+        break;
+      }
+
+      case 'saveGithubConfig': {
+        const [repoUrl] = args;
+        if (repoUrl && typeof repoUrl === 'string' && repoUrl.trim().length > 0) {
+          googleSheetConfig.githubRepoUrl = repoUrl.trim();
+          const ghLink = importantLinks.find(l => l.isGithub || l.name.includes("GitHub"));
+          if (ghLink) ghLink.url = googleSheetConfig.githubRepoUrl;
+          result = {
+            success: true,
+            message: 'GitHub रिपॉझिटरी URL यशस्वीरित्या अद्ययावत केले!',
+            repoUrl: googleSheetConfig.githubRepoUrl
+          };
+        } else {
+          result = { success: false, message: 'कृपया वैध GitHub रिपॉझिटरी लिंक टाका.' };
+        }
         break;
       }
 

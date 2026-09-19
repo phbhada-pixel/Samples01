@@ -1240,7 +1240,11 @@
         <div class="mobile-appbar-sub" id="mobileCurrentTabLabel">📊 डॅशबोर्ड</div>
       </div>
     </div>
-    <div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button type="button" onclick="openGithubModal(event)" style="background:#24292e; color:#fff; border:none; border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="GitHub रिपॉझिटरी">
+        <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+        GitHub
+      </button>
       <span class="header-chip" style="font-size:11px; padding:3px 8px;" id="mobileSyncStatusChip">🟢 ऑनलाइन</span>
     </div>
   </div>
@@ -1268,6 +1272,10 @@
       <button type="button" class="mobile-drawer-btn" data-tab="photoTab" onclick="handleDrawerNav('photoTab')">🖼️ फोटो गॅलरी</button>
       <button type="button" class="mobile-drawer-btn" data-tab="linksTab" onclick="handleDrawerNav('linksTab')">🔗 महत्त्वाच्या लिंक्स</button>
       <div style="border-top:1px solid #e2e8f0; margin:10px 0; padding-top:10px;">
+        <button type="button" class="sheet-btn" style="width:100%; justify-content:center; background:#24292e; color:#fff; margin-bottom:6px;" onclick="closeMobileDrawer(); openGithubModal(event);">
+          <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          🐙 GitHub रिपॉझिटरी व सपोर्ट
+        </button>
         <button type="button" class="sheet-btn" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="closeMobileDrawer(); openSheetSettingsModal();">
           ⚙️ गुगल शीट सेटिंग्ज
         </button>
@@ -1317,6 +1325,10 @@
         <span class="header-chip">🏛️ ६ उपकेंद्रे | ३७ गावे</span>
         <span class="header-chip">👥 ६५ कर्मचारी</span>
         <span class="header-chip" style="background:#38a169;">🟢 Google Sheet सिंक</span>
+        <button type="button" class="header-chip" id="btnHeaderGithub" onclick="openGithubModal(event)" style="background:#24292e; color:#ffffff; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:6px; font-weight:600; padding:6px 12px; transition:transform 0.15s ease;" title="GitHub रिपॉझिटरी व सोर्स कोड">
+          <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor" style="display:inline-block;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          <span>GitHub</span>
+        </button>
       </div>
     </div>
   </div>
@@ -2624,7 +2636,17 @@
 
   <div class="app-footer">
     <p style="margin: 0 0 6px 0;"><b>&copy; २०२६ प्राथमिक आरोग्य केंद्र, भादा.</b> सर्व हक्क सुरक्षित.</p>
-    <p style="margin: 0;">उत्तम आरोग्य सेवेसाठी तंत्रज्ञानाची जोड <span class="heart">❤️</span></p>
+    <p style="margin: 0 0 8px 0;">उत्तम आरोग्य सेवेसाठी तंत्रज्ञानाची जोड <span class="heart">❤️</span></p>
+    <div style="display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; font-size:12.5px; margin-top:6px;">
+      <a href="#" onclick="openGithubModal(event)" style="color:#24292e; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700; background:#edf2f7; padding:3px 10px; border-radius:6px; border:1px solid #cbd5e0;">
+        <svg height="13" width="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+        <span>GitHub रिपॉझिटरी व सपोर्ट</span>
+      </a>
+      <span style="color:#cbd5e0;">|</span>
+      <a href="#" onclick="openSheetSettingsModal(); return false;" style="color:#2b6cb0; text-decoration:none; font-weight:600;">
+        ⚙️ Google Sheet सेटिंग्ज
+      </a>
+    </div>
   </div>
 
   <div id="myModal" class="modal">
@@ -2637,7 +2659,7 @@
   <div id="sheetSettingsModal" class="sheet-modal">
     <div class="sheet-modal-body">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-        <h3 style="margin:0; color:#22543d; font-size:18px;">⚙️ गुगल शीट सेटिंग्ज (Google Sheet Settings)</h3>
+        <h3 style="margin:0; color:#22543d; font-size:18px;">⚙️ गुगल शीट व सिस्टीम सेटिंग्ज</h3>
         <button onclick="closeSheetSettingsModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:#718096;">✕</button>
       </div>
       <div class="form-group" style="margin-bottom:15px;">
@@ -2650,6 +2672,11 @@
         <input type="url" id="cfgWebhookUrl" style="width:100%; font-family:monospace;" placeholder="https://script.google.com/macros/s/.../exec">
         <small style="color:#718096; display:block; margin-top:4px;">डेटा थेट आपल्या Google Sheet मध्ये सेव्ह करण्यासाठी वेब ॲप लिंक.</small>
       </div>
+      <div class="form-group" style="margin-bottom:15px;">
+        <label>GitHub रिपॉझिटरी URL (GitHub Repository URL)</label>
+        <input type="url" id="cfgGithubRepoUrl" style="width:100%; font-family:monospace;" placeholder="https://github.com/phcbhada/nvbdcp-malaria-management-system">
+        <small style="color:#718096; display:block; margin-top:4px;">प्रकल्पाचा अधिकृत GitHub ओपन सोर्स कोड व दस्तऐवजीकरण दुवा.</small>
+      </div>
       <div style="margin-bottom:20px; background:#f7fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; color:#2d3748; margin:0;">
           <input type="checkbox" id="cfgAutoSync" checked style="width:18px; height:18px;">
@@ -2659,6 +2686,85 @@
       <div style="display:flex; justify-content:flex-end; gap:10px;">
         <button class="sheet-btn sheet-btn-secondary" onclick="closeSheetSettingsModal()">रद्द करा</button>
         <button class="sheet-btn" id="btnSaveSheetConfig" onclick="saveGoogleSheetSettings()">✅ सेव्ह करा</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated GitHub Modal -->
+  <div id="githubModal" class="sheet-modal">
+    <div class="sheet-modal-body" style="max-width:640px; padding:24px; border-radius:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; border-bottom:2px solid #edf2f7; padding-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="background:#24292e; color:#ffffff; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
+            <svg height="26" width="26" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          </div>
+          <div>
+            <h3 style="margin:0; font-size:18px; color:#1a202c; font-weight:800; display:flex; align-items:center; gap:8px;">
+              <span>GitHub रिपॉझिटरी व सपोर्ट</span>
+              <span style="font-size:11px; background:#e2e8f0; color:#2d3748; padding:2px 8px; border-radius:12px; font-weight:600;">Open Source</span>
+            </h3>
+            <p style="margin:3px 0 0 0; font-size:13px; color:#718096;">
+              PHC Bhada Malaria Management System • Source Code & Support
+            </p>
+          </div>
+        </div>
+        <button type="button" onclick="closeGithubModal()" style="background:#edf2f7; border:none; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; color:#4a5568; display:flex; align-items:center; justify-content:center;">✕</button>
+      </div>
+
+      <!-- Current Repo URL Box -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:18px;">
+        <label style="display:block; font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
+          🌐 GitHub Repository URL:
+        </label>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input type="text" id="ghModalRepoInput" style="flex:1; min-width:260px; font-family:monospace; font-size:13px; padding:8px 12px; border:1px solid #cbd5e0; border-radius:6px; background:#fff;" value="https://github.com/phcbhada/nvbdcp-malaria-management-system">
+          <button type="button" class="sheet-btn" onclick="saveGithubRepoFromModal()" style="padding:8px 14px; font-size:13px;">💾 सेव्ह करा</button>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:18px;">
+        <a id="ghModalOpenBtn" href="https://github.com/phcbhada/nvbdcp-malaria-management-system" target="_blank" rel="noopener noreferrer" style="text-decoration:none; background:#24292e; color:#ffffff; padding:12px 16px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:14px; box-shadow:0 2px 6px rgba(36,41,46,0.25);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+            <span>GitHub वर रिपॉझिटरी उघडा</span>
+          </div>
+          <span>↗️</span>
+        </a>
+
+        <a id="ghModalIssuesBtn" href="https://github.com/phcbhada/nvbdcp-malaria-management-system/issues" target="_blank" rel="noopener noreferrer" style="text-decoration:none; background:#ebf8ff; color:#2b6cb0; border:1px solid #bee3f8; padding:12px 16px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:14px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🐛</span>
+            <span>इश्यू / समस्या नोंदवा (Issues)</span>
+          </div>
+          <span>↗️</span>
+        </a>
+      </div>
+
+      <!-- Git Clone Command Box -->
+      <div style="background:#1a202c; color:#e2e8f0; padding:14px; border-radius:8px; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#a0aec0;">Git Clone Command:</span>
+          <button type="button" onclick="copyGitCloneCmd()" id="btnCopyGitClone" style="background:#2d3748; color:#fff; border:1px solid #4a5568; border-radius:4px; font-size:11px; padding:3px 10px; cursor:pointer; font-weight:600;">
+            📋 कॉपी करा
+          </button>
+        </div>
+        <code id="ghCloneCommandText" style="font-family:Consolas, Monaco, monospace; font-size:12.5px; color:#68d391; word-break:break-all; display:block;">git clone https://github.com/phcbhada/nvbdcp-malaria-management-system.git</code>
+      </div>
+
+      <!-- Features & Links list -->
+      <div style="border-top:1px solid #e2e8f0; padding-top:14px; display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;">
+        <div style="font-size:12.5px; color:#718096;">
+          🌿 <b>Node.js • Express • HTML5 • Tailwind CSS</b>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <a id="ghModalReadmeBtn" href="https://github.com/phcbhada/nvbdcp-malaria-management-system#readme" target="_blank" style="text-decoration:none; font-size:12.5px; color:#2b6cb0; font-weight:600; padding:4px 8px; border-radius:4px; background:#edf2f7;">
+            📖 README & डॉक्स
+          </a>
+          <button type="button" class="sheet-btn sheet-btn-secondary" onclick="closeGithubModal()" style="font-size:12.5px; padding:4px 14px;">
+            बंद करा
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -4023,10 +4129,16 @@
 
       const cfgId = document.getElementById('cfgSpreadsheetId');
       const cfgUrl = document.getElementById('cfgWebhookUrl');
+      const cfgGh = document.getElementById('cfgGithubRepoUrl');
       const cfgAuto = document.getElementById('cfgAutoSync');
       if (cfgId) cfgId.value = cfg.spreadsheetId || '';
       if (cfgUrl) cfgUrl.value = cfg.webhookUrl || '';
+      if (cfgGh && cfg.githubRepoUrl) cfgGh.value = cfg.githubRepoUrl;
       if (cfgAuto) cfgAuto.checked = !!cfg.autoSync;
+
+      if (cfg.githubRepoUrl) {
+        updateGithubModalLinks(cfg.githubRepoUrl);
+      }
     }
 
     function populateUpkendraFilter() {
@@ -4216,6 +4328,7 @@
       const config = {
         spreadsheetId: document.getElementById('cfgSpreadsheetId').value.trim(),
         webhookUrl: document.getElementById('cfgWebhookUrl').value.trim(),
+        githubRepoUrl: (document.getElementById('cfgGithubRepoUrl') ? document.getElementById('cfgGithubRepoUrl').value.trim() : ''),
         autoSync: document.getElementById('cfgAutoSync').checked
       };
 
@@ -4226,10 +4339,89 @@
           alert(res.message);
           closeSheetSettingsModal();
           updateGoogleSheetUI(res.config);
+          loadImportantLinks();
         } else {
           alert('जतन करताना एरर: ' + (res ? res.message : ''));
         }
       }).saveGoogleSheetConfig(config);
+    }
+
+    // --- GITHUB MODAL & SUPPORT CONTROLLERS ---
+    function openGithubModal(e) {
+      if (e) e.preventDefault();
+      document.getElementById('githubModal').style.display = 'flex';
+      google.script.run.withSuccessHandler(res => {
+        if (res && res.success && res.repoUrl) {
+          updateGithubModalLinks(res.repoUrl);
+        }
+      }).getGithubInfo();
+    }
+
+    function closeGithubModal() {
+      document.getElementById('githubModal').style.display = 'none';
+    }
+
+    function updateGithubModalLinks(repoUrl) {
+      if (!repoUrl) return;
+      const cleanUrl = repoUrl.replace(/\/$/, '');
+      const cloneCmd = `git clone ${cleanUrl.endsWith('.git') ? cleanUrl : cleanUrl + '.git'}`;
+
+      const inp = document.getElementById('ghModalRepoInput');
+      if (inp) inp.value = cleanUrl;
+
+      const openBtn = document.getElementById('ghModalOpenBtn');
+      if (openBtn) openBtn.href = cleanUrl;
+
+      const issuesBtn = document.getElementById('ghModalIssuesBtn');
+      if (issuesBtn) issuesBtn.href = `${cleanUrl}/issues`;
+
+      const readmeBtn = document.getElementById('ghModalReadmeBtn');
+      if (readmeBtn) readmeBtn.href = `${cleanUrl}#readme`;
+
+      const codeElem = document.getElementById('ghCloneCommandText');
+      if (codeElem) codeElem.textContent = cloneCmd;
+
+      const cfgGh = document.getElementById('cfgGithubRepoUrl');
+      if (cfgGh) cfgGh.value = cleanUrl;
+    }
+
+    function saveGithubRepoFromModal() {
+      const inp = document.getElementById('ghModalRepoInput');
+      if (!inp) return;
+      const val = inp.value.trim();
+      if (!val) {
+        alert('कृपया वैध GitHub URL टाका.');
+        return;
+      }
+      google.script.run.withSuccessHandler(res => {
+        if (res && res.success) {
+          alert(res.message || 'GitHub URL यशस्वीरित्या अपडेट करण्यात आले!');
+          updateGithubModalLinks(res.repoUrl || val);
+          loadImportantLinks();
+        } else {
+          alert('एरर: ' + (res ? res.message : 'अपडेट अयशस्वी'));
+        }
+      }).saveGithubConfig(val);
+    }
+
+    function copyGitCloneCmd() {
+      const codeElem = document.getElementById('ghCloneCommandText');
+      const btn = document.getElementById('btnCopyGitClone');
+      if (!codeElem) return;
+      const text = codeElem.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+          const original = btn.textContent;
+          btn.textContent = '✅ कॉपी झाले!';
+          btn.style.background = '#276749';
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.style.background = '#2d3748';
+          }, 2000);
+        }
+      }).catch(err => {
+        alert('कॉपी करण्यात अडचण: ' + err);
+      });
     }
 
     function deleteBsRecord(id) {
@@ -4254,20 +4446,50 @@
       let html = '';
       if (res.success) {
         if (res.data.length > 0) {
-          const colors = ['#3182ce', '#38a169', '#dd6b20', '#e53e3e', '#805ad5', '#00796b']; 
+          const colors = ['#24292e', '#3182ce', '#38a169', '#dd6b20', '#e53e3e', '#805ad5', '#00796b']; 
           res.data.forEach((link, index) => {
-            let color = colors[index % colors.length];
-            html += `
-            <a href="${link.url}" target="_blank" class="dl-item" style="border-left: 5px solid ${color};">
-              <div style="display:flex; align-items:center; gap:15px;">
-                <div style="font-size:24px; background:#f8fafc; padding:12px; border-radius:10px;">${link.icon}</div>
-                <div>
-                  <span style="display:block; font-size:16px; font-weight:700; color:var(--text-main);">${link.name}</span>
-                  <span style="font-size:13px; color:var(--text-muted); font-weight:500;">${link.desc}</span>
+            let color = link.isGithub ? '#24292e' : colors[index % colors.length];
+            const isGithub = !!link.isGithub || link.icon === '🐙' || (link.name && link.name.includes('GitHub'));
+
+            if (isGithub) {
+              html += `
+              <div class="dl-item" style="border-left: 5px solid #24292e; background:#f8fafc;">
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:12px;">
+                  <div style="display:flex; align-items:center; gap:15px;">
+                    <div style="font-size:26px; background:#24292e; color:#fff; padding:10px 12px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                      <svg height="24" width="24" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                    </div>
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="display:block; font-size:16px; font-weight:700; color:var(--text-main);">${link.name}</span>
+                        <span style="font-size:11px; background:#edf2f7; color:#2d3748; padding:2px 8px; border-radius:12px; font-weight:700; border:1px solid #cbd5e0;">Source & Issues</span>
+                      </div>
+                      <span style="font-size:13px; color:var(--text-muted); font-weight:500;">${link.desc}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="sheet-btn" style="background:#24292e; color:#fff; font-size:13px; padding:6px 14px;" onclick="openGithubModal(event)">
+                      ⚙️ रिपॉझिटरी व टूल्स
+                    </button>
+                    <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="sheet-btn sheet-btn-secondary" style="font-size:13px; padding:6px 14px; text-decoration:none;">
+                      उघडा ↗️
+                    </a>
+                  </div>
                 </div>
-              </div>
-              <span style="font-size:20px; color:${color};">↗️</span>
-            </a>`;
+              </div>`;
+            } else {
+              html += `
+              <a href="${link.url}" target="_blank" class="dl-item" style="border-left: 5px solid ${color};">
+                <div style="display:flex; align-items:center; gap:15px;">
+                  <div style="font-size:24px; background:#f8fafc; padding:12px; border-radius:10px;">${link.icon}</div>
+                  <div>
+                    <span style="display:block; font-size:16px; font-weight:700; color:var(--text-main);">${link.name}</span>
+                    <span style="font-size:13px; color:var(--text-muted); font-weight:500;">${link.desc}</span>
+                  </div>
+                </div>
+                <span style="font-size:20px; color:${color};">↗️</span>
+              </a>`;
+            }
           });
         } else { html = `<p style="text-align:center; color:#718096; padding:20px;">कोणत्याही लिंक्स उपलब्ध नाहीत.</p>`; }
       } else { html = `<p style="color:red; text-align:center;">${res.message}</p>`; }
