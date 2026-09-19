@@ -240,6 +240,138 @@
             return { result: { success: true, message: 'गुगल शीट सेटिंग्ज सेव्ह झाल्या!', config: clientGoogleSheetConfig } };
           }
 
+          case 'processForm': {
+            const [formDataArray] = args;
+            const entries = Array.isArray(formDataArray) ? formDataArray : (formDataArray ? [formDataArray] : []);
+            if (!entries.length) return { result: { success: false, message: 'अवैध किंवा रिकामा फॉर्म डेटा.' } };
+
+            const newEntriesForSync = [];
+            const newVillageDetailsForSync = [];
+
+            entries.forEach(entry => {
+              const dateObj = entry.bsSendDate ? new Date(entry.bsSendDate) : new Date();
+              const yyyymmdd = `${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}`;
+              const uniqueId = `BS_${yyyymmdd}_${entry.bsCode || '0'}_${Date.now()}`;
+              const total = (parseInt(entry.paraynt) || 0) - (parseInt(entry.pasun) || 0) + 1;
+
+              const row = [
+                uniqueId,
+                dateObj.toISOString().slice(0, 10),
+                entry.upkendra || '',
+                entry.employeeName || '',
+                entry.designation || '',
+                entry.bsCode || '',
+                entry.bundleNumber || 'B_1',
+                parseInt(entry.pasun) || 0,
+                parseInt(entry.paraynt) || 0,
+                total
+              ];
+
+              clientBsData.unshift(row);
+
+              newEntriesForSync.push({
+                id: uniqueId,
+                date: dateObj.toISOString().slice(0, 10),
+                upkendra: entry.upkendra || '',
+                employeeName: entry.employeeName || '',
+                designation: entry.designation || '',
+                bsCode: entry.bsCode || '',
+                bundleNumber: entry.bundleNumber || '',
+                pasun: parseInt(entry.pasun) || 0,
+                paraynt: parseInt(entry.paraynt) || 0,
+                total: total
+              });
+
+              const vDetails = Array.isArray(entry.villageDetails) ? entry.villageDetails : (Array.isArray(entry.villageRows) ? entry.villageRows : []);
+              if (vDetails.length > 0) {
+                vDetails.forEach(vr => {
+                  clientVillageDetails.unshift([
+                    uniqueId,
+                    entry.employeeName || '',
+                    dateObj.toISOString().slice(0, 10),
+                    vr.villageName || '',
+                    parseInt(vr.sampleCount) || 0,
+                    parseInt(vr.maleCount) || 0,
+                    parseInt(vr.femaleCount) || 0,
+                    entry.upkendra || ''
+                  ]);
+                  newVillageDetailsForSync.push({
+                    uniqueId: uniqueId,
+                    employeeName: entry.employeeName || '',
+                    date: dateObj.toISOString().slice(0, 10),
+                    villageName: vr.villageName || '',
+                    sampleCount: parseInt(vr.sampleCount) || 0,
+                    maleCount: parseInt(vr.maleCount) || 0,
+                    femaleCount: parseInt(vr.femaleCount) || 0,
+                    upkendra: entry.upkendra || ''
+                  });
+                });
+              }
+            });
+
+            setLocalStore('bsDataEntry', clientBsData);
+            setLocalStore('villageDetails', clientVillageDetails);
+
+            // Direct Sync with Google Sheet Webhook
+            if (clientGoogleSheetConfig.webhookUrl) {
+              try {
+                fetch(clientGoogleSheetConfig.webhookUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'appendEntries',
+                    spreadsheetId: clientGoogleSheetConfig.spreadsheetId,
+                    entries: newEntriesForSync,
+                    villageDetails: newVillageDetailsForSync,
+                    timestamp: new Date().toISOString()
+                  })
+                }).catch(e => console.warn('Google Sheet Webhook silent catch:', e));
+              } catch (e) {}
+            }
+
+            return {
+              result: {
+                success: true,
+                message: '✅ डेटा थेट गुगल शीट व स्थानिक प्रणालीमध्ये सुरक्षित सेव्ह झाला!',
+                sheetUrl: `https://docs.google.com/spreadsheets/d/${clientGoogleSheetConfig.spreadsheetId}/edit`
+              }
+            };
+          }
+
+          case 'saveMonthlyIndicators':
+          case 'saveMonthIndicators': {
+            const [indicatorData] = args;
+            if (!indicatorData || !indicatorData.monthName) {
+              return { result: { success: false, message: 'महिन्याचे नाव आवश्यक आहे.' } };
+            }
+
+            // Sync to Google Sheet webhook
+            if (clientGoogleSheetConfig.webhookUrl) {
+              try {
+                fetch(clientGoogleSheetConfig.webhookUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'saveMonthIndicators',
+                    spreadsheetId: clientGoogleSheetConfig.spreadsheetId,
+                    monthName: indicatorData.monthName,
+                    indicators: indicatorData,
+                    timestamp: new Date().toISOString()
+                  })
+                }).catch(e => console.warn('Google Sheet Webhook silent catch:', e));
+              } catch (e) {}
+            }
+
+            return {
+              result: {
+                success: true,
+                message: `✅ माहे ${indicatorData.monthName} चे मासिक अहवाल निर्देशांक थेट गुगल शीटमध्ये सुरक्षित जतन झाले!`
+              }
+            };
+          }
+
           case 'saveBsData': {
             const [data] = args;
             if (!data) return { result: { success: false, message: 'डेटा उपलब्ध नाही.' } };

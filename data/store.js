@@ -1,5 +1,12 @@
 // in-memory data store for PHC Bhada National Vector Borne Disease Control Programme
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseIndianDate, formatIndianDateStr, validateDateDdMmYyyy } from './dateParser.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DB_FILE = path.join(__dirname, 'db.json');
 
 export const masterData = [
   {
@@ -2215,6 +2222,7 @@ export function transferEmployee(empIdOrObj, targetUpkendra, newVillages, newBsC
 
   // 5. SYNCHRONIZE WITH masterData FOR LEGACY REGISTERS & REPORTS
   syncMasterData();
+  saveDbToDisk();
 
   return {
     success: true,
@@ -2271,6 +2279,7 @@ export function updateEmployeeVillages(empId, villageList) {
   });
 
   syncMasterData();
+  saveDbToDisk();
   return {
     success: true,
     message: `${emp.employeeName} यांच्या कार्यक्षेत्र गावांची यादी व लिंक्ड रेकॉर्ड्स अद्ययावत झाली!`,
@@ -2321,6 +2330,7 @@ export function saveEmployee(data) {
   }
 
   syncMasterData();
+  saveDbToDisk();
   return { success: true, message: `कर्मचारी '${emp.employeeName}' यशस्वीरित्या जतन झाले!`, employee: emp };
 }
 
@@ -2330,6 +2340,7 @@ export function deleteEmployee(empId) {
   if (idx === -1) return { success: false, message: "कर्मचारी सापडला नाही." };
   const removed = employeeMaster.splice(idx, 1)[0];
   syncMasterData();
+  saveDbToDisk();
   return { success: true, message: `कर्मचारी '${removed.employeeName}' हटवण्यात आले.`, employee: removed };
 }
 
@@ -2358,6 +2369,7 @@ export function saveSubcenter(data) {
     };
     subcenterMaster.push(sc);
   }
+  saveDbToDisk();
   return { success: true, message: `उपकेंद्र '${sc.name}' यशस्वीरित्या जतन झाले!`, subcenter: sc };
 }
 
@@ -2366,6 +2378,7 @@ export function deleteSubcenter(scId) {
   const idx = subcenterMaster.findIndex(s => s.id === scId || s.name === scId);
   if (idx === -1) return { success: false, message: "उपकेंद्र सापडले नाही." };
   const removed = subcenterMaster.splice(idx, 1)[0];
+  saveDbToDisk();
   return { success: true, message: `उपकेंद्र '${removed.name}' हटवण्यात आले.`, subcenter: removed };
 }
 
@@ -2401,6 +2414,7 @@ export function saveVillage(data) {
     };
     villagesMaster.push(vil);
   }
+  saveDbToDisk();
   return { success: true, message: `गाव '${vil.villageName}' यशस्वीरित्या जतन झाले!`, village: vil };
 }
 
@@ -2409,6 +2423,7 @@ export function deleteVillage(vilId) {
   const idx = villagesMaster.findIndex(v => v.id === vilId || v.villageName === vilId);
   if (idx === -1) return { success: false, message: "गाव सापडले नाही." };
   const removed = villagesMaster.splice(idx, 1)[0];
+  saveDbToDisk();
   return { success: true, message: `गाव '${removed.villageName}' हटवण्यात आले.`, village: removed };
 }
 
@@ -2538,6 +2553,7 @@ export function importMasterDataFromCsv(csvText) {
   }
 
   syncMasterData();
+  saveDbToDisk();
 
   return {
     success: true,
@@ -3083,6 +3099,7 @@ export function seedInitialMalariaData() {
 export function clearAllTransactionData() {
   bsDataEntry.length = 0;
   villageDetails.length = 0;
+  saveDbToDisk();
   return { success: true, message: "सर्व नोंदी यशस्वीरित्या रिकाम्या करण्यात आल्या." };
 }
 
@@ -3188,6 +3205,8 @@ export function importBsDataEntryCsv(csvText, replace = false) {
     added++;
   }
 
+  saveDbToDisk();
+
   return {
     success: true,
     added,
@@ -3292,6 +3311,8 @@ export function importVillageDetailsCsv(csvText, replace = false) {
     added++;
   }
 
+  saveDbToDisk();
+
   return {
     success: true,
     added,
@@ -3366,6 +3387,8 @@ export function importMonthMasterCsv(csvText) {
       updated++;
     }
   }
+
+  saveDbToDisk();
 
   return {
     success: true,
@@ -3794,6 +3817,113 @@ export function getEmployeeVillageDistributionSummary() {
     designationDistribution: designationPieData
   };
 }
+
+// ================= DISK PERSISTENCE ENGINE (db.json) =================
+export function saveDbToDisk() {
+  try {
+    const dataToSave = {
+      bsDataEntry: bsDataEntry.map(r => [
+        r[0],
+        r[1] instanceof Date ? r[1].toISOString() : r[1],
+        r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9]
+      ]),
+      villageDetails: villageDetails.map(r => [
+        r[0], r[1],
+        r[2] instanceof Date ? r[2].toISOString() : r[2],
+        r[3], r[4], r[5], r[6], r[7]
+      ]),
+      monthMaster: monthMaster.map(m => ({
+        ...m,
+        f1Start: m.f1Start instanceof Date ? m.f1Start.toISOString() : m.f1Start,
+        f1End: m.f1End instanceof Date ? m.f1End.toISOString() : m.f1End,
+        f2Start: m.f2Start instanceof Date ? m.f2Start.toISOString() : m.f2Start,
+        f2End: m.f2End instanceof Date ? m.f2End.toISOString() : m.f2End
+      })),
+      employeeMaster,
+      subcenterMaster,
+      villagesMaster,
+      masterData,
+      transferHistory,
+      googleSheetConfig
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Store] Error saving db.json to disk:', err);
+  }
+}
+
+export function loadDbFromDisk() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const raw = fs.readFileSync(DB_FILE, 'utf8');
+      if (raw && raw.trim()) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.bsDataEntry) && parsed.bsDataEntry.length > 0) {
+          bsDataEntry.length = 0;
+          parsed.bsDataEntry.forEach(r => {
+            bsDataEntry.push([
+              r[0],
+              new Date(r[1]),
+              r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9]
+            ]);
+          });
+        }
+        if (Array.isArray(parsed.villageDetails) && parsed.villageDetails.length > 0) {
+          villageDetails.length = 0;
+          parsed.villageDetails.forEach(r => {
+            villageDetails.push([
+              r[0], r[1],
+              new Date(r[2]),
+              r[3], r[4], r[5], r[6], r[7]
+            ]);
+          });
+        }
+        if (Array.isArray(parsed.monthMaster) && parsed.monthMaster.length > 0) {
+          parsed.monthMaster.forEach((savedM, i) => {
+            if (monthMaster[i]) {
+              Object.assign(monthMaster[i], savedM, {
+                f1Start: new Date(savedM.f1Start || monthMaster[i].f1Start),
+                f1End: new Date(savedM.f1End || monthMaster[i].f1End),
+                f2Start: new Date(savedM.f2Start || monthMaster[i].f2Start),
+                f2End: new Date(savedM.f2End || monthMaster[i].f2End)
+              });
+            }
+          });
+        }
+        if (Array.isArray(parsed.employeeMaster) && parsed.employeeMaster.length > 0) {
+          employeeMaster.length = 0;
+          parsed.employeeMaster.forEach(e => employeeMaster.push(e));
+        }
+        if (Array.isArray(parsed.subcenterMaster) && parsed.subcenterMaster.length > 0) {
+          subcenterMaster.length = 0;
+          parsed.subcenterMaster.forEach(s => subcenterMaster.push(s));
+        }
+        if (Array.isArray(parsed.villagesMaster) && parsed.villagesMaster.length > 0) {
+          villagesMaster.length = 0;
+          parsed.villagesMaster.forEach(v => villagesMaster.push(v));
+        }
+        if (Array.isArray(parsed.masterData) && parsed.masterData.length > 0) {
+          masterData.length = 0;
+          parsed.masterData.forEach(m => masterData.push(m));
+        }
+        if (Array.isArray(parsed.transferHistory) && parsed.transferHistory.length > 0) {
+          transferHistory.length = 0;
+          parsed.transferHistory.forEach(t => transferHistory.push(t));
+        }
+        if (parsed.googleSheetConfig && typeof parsed.googleSheetConfig === 'object') {
+          Object.assign(googleSheetConfig, parsed.googleSheetConfig);
+        }
+        console.log(`[Store] Loaded persistent database from disk: ${bsDataEntry.length} BS records, ${villageDetails.length} village details.`);
+      }
+    }
+  } catch (err) {
+    console.error('[Store] Error loading db.json from disk:', err);
+  }
+}
+
+// Auto-load existing database from disk upon startup
+loadDbFromDisk();
+
 
 
 

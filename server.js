@@ -34,7 +34,9 @@ import {
   seedInitialMalariaData,
   clearAllTransactionData,
   getOpdBsVillagewiseSummary,
-  getEmployeeVillageDistributionSummary
+  getEmployeeVillageDistributionSummary,
+  saveDbToDisk,
+  loadDbFromDisk
 } from './data/store.js';
 
 import {
@@ -343,12 +345,14 @@ app.get('/api/analytics/employee-village-distribution', (req, res) => {
   }
 });
 
-// Background sync helper to send rows to Google Sheet Webhook
+// Primary sync helper to send rows directly to Google Sheet Webhook
 async function triggerGoogleSheetSync(payload) {
-  if (!googleSheetConfig.webhookUrl) return { success: false, message: 'गुगल शीट वेबहुक URL उपलब्ध नाही.' };
+  if (!googleSheetConfig.webhookUrl) {
+    return { success: false, message: 'गुगल शीट वेबहुक URL उपलब्ध नाही.' };
+  }
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const response = await fetch(googleSheetConfig.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -356,9 +360,15 @@ async function triggerGoogleSheetSync(payload) {
       signal: controller.signal
     });
     clearTimeout(timeout);
+    
+    let respData = null;
+    try {
+      respData = await response.json();
+    } catch (_) {}
+
     googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
-    googleSheetConfig.syncStatus = 'यशस्वीरित्या सिंक झाले';
-    return { success: true };
+    googleSheetConfig.syncStatus = 'थेट गुगल शीटमध्ये सुरक्षित जतन (Saved in Google Sheet)';
+    return { success: true, data: respData };
   } catch (err) {
     googleSheetConfig.lastSyncTime = new Date().toLocaleString('mr-IN');
     googleSheetConfig.syncStatus = 'सिंक नोंदणीकृत (स्थानिक प्रणालीमध्ये सुरक्षित)';
@@ -424,17 +434,20 @@ app.post('/api/rpc', async (req, res) => {
         break;
       }
 
+      case 'saveBsData':
       case 'processForm': {
-        const [formDataArray] = args;
-        if (!Array.isArray(formDataArray)) {
-          result = { success: false, message: 'अवैध फॉर्म डेटा.' };
+        const [formData] = args;
+        const formDataArray = Array.isArray(formData) ? formData : (formData ? [formData] : []);
+        if (!formDataArray.length) {
+          result = { success: false, message: 'अवैध किंवा रिकामा फॉर्म डेटा (Invalid or empty form data).' };
           break;
         }
 
         const newEntriesForSync = [];
+        const newVillageDetailsForSync = [];
 
         formDataArray.forEach(entry => {
-          const dateObj = new Date(entry.bsSendDate);
+          const dateObj = entry.bsSendDate ? new Date(entry.bsSendDate) : new Date();
           const yyyymmdd = `${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}`;
           const rowId = bsDataEntry.length + 1;
           const uniqueId = `BS_${yyyymmdd}_${entry.bsCode || '0'}_${rowId}`;
@@ -443,11 +456,11 @@ app.post('/api/rpc', async (req, res) => {
           bsDataEntry.push([
             uniqueId,
             dateObj,
-            entry.upkendra,
-            entry.employeeName,
-            entry.designation,
-            entry.bsCode,
-            entry.bundleNumber,
+            entry.upkendra || '',
+            entry.employeeName || '',
+            entry.designation || '',
+            entry.bsCode || '',
+            entry.bundleNumber || '',
             parseInt(entry.pasun) || 0,
             parseInt(entry.paraynt) || 0,
             total
@@ -456,45 +469,63 @@ app.post('/api/rpc', async (req, res) => {
           newEntriesForSync.push({
             id: uniqueId,
             date: dateObj.toISOString().split('T')[0],
-            upkendra: entry.upkendra,
-            employeeName: entry.employeeName,
-            designation: entry.designation,
-            bsCode: entry.bsCode,
-            bundleNumber: entry.bundleNumber,
-            pasun: entry.pasun,
-            paraynt: entry.paraynt,
+            upkendra: entry.upkendra || '',
+            employeeName: entry.employeeName || '',
+            designation: entry.designation || '',
+            bsCode: entry.bsCode || '',
+            bundleNumber: entry.bundleNumber || '',
+            pasun: parseInt(entry.pasun) || 0,
+            paraynt: parseInt(entry.paraynt) || 0,
             total: total
           });
 
-          if (Array.isArray(entry.villageDetails)) {
-            entry.villageDetails.forEach(v => {
+          const vDetails = Array.isArray(entry.villageDetails) ? entry.villageDetails : (Array.isArray(entry.villageRows) ? entry.villageRows : []);
+          if (vDetails.length > 0) {
+            vDetails.forEach(v => {
               villageDetails.push([
                 uniqueId,
-                entry.employeeName,
+                entry.employeeName || '',
                 dateObj,
-                v.villageName,
+                v.villageName || '',
                 parseInt(v.sampleCount) || 0,
                 parseInt(v.maleCount) || 0,
                 parseInt(v.femaleCount) || 0,
-                entry.upkendra
+                entry.upkendra || ''
               ]);
+              newVillageDetailsForSync.push({
+                uniqueId: uniqueId,
+                employeeName: entry.employeeName || '',
+                date: dateObj.toISOString().split('T')[0],
+                villageName: v.villageName || '',
+                sampleCount: parseInt(v.sampleCount) || 0,
+                maleCount: parseInt(v.maleCount) || 0,
+                femaleCount: parseInt(v.femaleCount) || 0,
+                upkendra: entry.upkendra || ''
+              });
             });
           }
         });
 
-        // Trigger Google Sheet sync in background if configured
-        if (googleSheetConfig.autoSync && googleSheetConfig.webhookUrl) {
-          triggerGoogleSheetSync({
+        // Direct Google Sheet Sync: Await webhook persistence
+        let sheetSyncResult = { success: false };
+        if (googleSheetConfig.webhookUrl) {
+          sheetSyncResult = await triggerGoogleSheetSync({
             action: 'appendEntries',
             spreadsheetId: googleSheetConfig.spreadsheetId,
-            entries: newEntriesForSync
-          }).catch(console.error);
+            entries: newEntriesForSync,
+            villageDetails: newVillageDetailsForSync,
+            timestamp: new Date().toISOString()
+          });
         }
 
         result = {
           success: true,
-          message: 'डेटा स्थानिक प्रणाली व गुगल शीटसाठी सुरक्षित जतन झाला!',
-          sheetUrl: `https://docs.google.com/spreadsheets/d/${googleSheetConfig.spreadsheetId}/edit`
+          message: sheetSyncResult.success
+            ? '✅ डेटा थेट गुगल शीटमध्ये यशस्वीरित्या सुरक्षित सेव्ह झाला!'
+            : 'डेटा स्थानिक प्रणालीमध्ये सुरक्षित जतन झाला (गुगल शीट सिंक सज्ज आहे).',
+          sheetSynced: sheetSyncResult.success,
+          sheetUrl: `https://docs.google.com/spreadsheets/d/${googleSheetConfig.spreadsheetId}/edit`,
+          lastSyncTime: googleSheetConfig.lastSyncTime
         };
         break;
       }
@@ -553,6 +584,7 @@ app.post('/api/rpc', async (req, res) => {
           }
           if (typeof config.autoSync === 'boolean') googleSheetConfig.autoSync = config.autoSync;
         }
+        saveDbToDisk();
         result = {
           success: true,
           message: 'गुगल शीट व GitHub सेटिंग्ज यशस्वीरित्या अपडेट करण्यात आल्या!',
@@ -594,6 +626,15 @@ app.post('/api/rpc', async (req, res) => {
             if (villageDetails[i][0] === entryId) {
               villageDetails.splice(i, 1);
             }
+          }
+          saveDbToDisk();
+          if (googleSheetConfig.webhookUrl) {
+            triggerGoogleSheetSync({
+              action: 'deleteEntry',
+              spreadsheetId: googleSheetConfig.spreadsheetId,
+              entryId: entryId,
+              timestamp: new Date().toISOString()
+            }).catch(e => console.error('Error syncing delete to sheet:', e));
           }
           result = { success: true, message: `नोंद ${entryId} यशस्वीरित्या हटवली!` };
         } else {
@@ -940,6 +981,7 @@ app.post('/api/rpc', async (req, res) => {
         break;
       }
 
+      case 'saveMonthlyIndicators':
       case 'saveMonthIndicators': {
         const [indicatorData] = args;
         if (!indicatorData || !indicatorData.monthName) {
@@ -976,9 +1018,38 @@ app.post('/api/rpc', async (req, res) => {
           monthObj.progChloroquineSpent = parseInt(progCqIn) || 0;
         }
 
+        saveDbToDisk();
+
+        // Direct Google Sheet Sync for Monthly Indicators
+        let sheetSyncRes = { success: false };
+        if (googleSheetConfig.webhookUrl) {
+          sheetSyncRes = await triggerGoogleSheetSync({
+            action: 'saveMonthIndicators',
+            spreadsheetId: googleSheetConfig.spreadsheetId,
+            monthName: monthObj.name,
+            indicators: {
+              name: monthObj.name,
+              newOpd: monthObj.newOpd,
+              progNewOpd: monthObj.progNewOpd,
+              feverCases: monthObj.feverCases,
+              progFeverCases: monthObj.progFeverCases,
+              bloodSmears: monthObj.bloodSmears,
+              progBloodSmears: monthObj.progBloodSmears,
+              treatedCases: monthObj.treatedCases,
+              progTreatedCases: monthObj.progTreatedCases,
+              chloroquineSpent: monthObj.chloroquineSpent,
+              progChloroquineSpent: monthObj.progChloroquineSpent
+            },
+            timestamp: new Date().toISOString()
+          });
+        }
+
         result = {
           success: true,
-          message: `माहे ${monthObj.name} चे मासिक अहवाल निर्देशांक (नवीन बाह्यरुग्ण, तापाचे रुग्ण, उपचारीत रुग्ण, क्लोरोक्वीन गोळ्या खर्च) यशस्वीरित्या जतन झाले!`,
+          message: sheetSyncRes.success
+            ? `✅ माहे ${monthObj.name} चे मासिक अहवाल निर्देशांक थेट गुगल शीटमध्ये सुरक्षित जतन झाले!`
+            : `माहे ${monthObj.name} चे मासिक अहवाल निर्देशांक (नवीन बाह्यरुग्ण, तापाचे रुग्ण, उपचारीत रुग्ण, क्लोरोक्वीन गोळ्या खर्च) यशस्वीरित्या जतन झाले!`,
+          sheetSynced: sheetSyncRes.success,
           data: {
             name: monthObj.name,
             newOpd: monthObj.newOpd,
@@ -1069,6 +1140,17 @@ app.post('/api/rpc', async (req, res) => {
       case 'importMasterDataFromCsv': {
         const [csvText] = args;
         result = importMasterDataFromCsv(csvText);
+        saveDbToDisk();
+        if (googleSheetConfig.webhookUrl) {
+          triggerGoogleSheetSync({
+            action: 'syncMasterData',
+            spreadsheetId: googleSheetConfig.spreadsheetId,
+            timestamp: new Date().toISOString(),
+            employeeMaster,
+            subcenterMaster,
+            villagesMaster
+          }).catch(e => console.error('Error syncing master data to sheet:', e));
+        }
         break;
       }
 
@@ -1076,6 +1158,18 @@ app.post('/api/rpc', async (req, res) => {
       case 'uploadBsDataCsv': {
         const [csvText, replace] = args;
         result = importBsDataEntryCsv(csvText, !!replace);
+        saveDbToDisk();
+        if (googleSheetConfig.webhookUrl) {
+          triggerGoogleSheetSync({
+            action: 'syncAllData',
+            spreadsheetId: googleSheetConfig.spreadsheetId,
+            timestamp: new Date().toISOString(),
+            bsDataCount: bsDataEntry.length,
+            villageDetailsCount: villageDetails.length,
+            bsData: bsDataEntry.map(formatBsEntry),
+            villageDetails: villageDetails.map(formatVillageDetail)
+          }).catch(e => console.error('Error syncing bs data import to sheet:', e));
+        }
         break;
       }
 
@@ -1083,6 +1177,18 @@ app.post('/api/rpc', async (req, res) => {
       case 'uploadVillageDetailsCsv': {
         const [csvText, replace] = args;
         result = importVillageDetailsCsv(csvText, !!replace);
+        saveDbToDisk();
+        if (googleSheetConfig.webhookUrl) {
+          triggerGoogleSheetSync({
+            action: 'syncAllData',
+            spreadsheetId: googleSheetConfig.spreadsheetId,
+            timestamp: new Date().toISOString(),
+            bsDataCount: bsDataEntry.length,
+            villageDetailsCount: villageDetails.length,
+            bsData: bsDataEntry.map(formatBsEntry),
+            villageDetails: villageDetails.map(formatVillageDetail)
+          }).catch(e => console.error('Error syncing village details import to sheet:', e));
+        }
         break;
       }
 
@@ -1090,6 +1196,15 @@ app.post('/api/rpc', async (req, res) => {
       case 'uploadMonthMasterCsv': {
         const [csvText] = args;
         result = importMonthMasterCsv(csvText);
+        saveDbToDisk();
+        if (googleSheetConfig.webhookUrl) {
+          triggerGoogleSheetSync({
+            action: 'syncMonthMaster',
+            spreadsheetId: googleSheetConfig.spreadsheetId,
+            timestamp: new Date().toISOString(),
+            monthMaster: monthMaster.map(m => ({ ...m }))
+          }).catch(e => console.error('Error syncing month master to sheet:', e));
+        }
         break;
       }
 
@@ -1098,6 +1213,7 @@ app.post('/api/rpc', async (req, res) => {
         bsDataEntry.length = 0;
         villageDetails.length = 0;
         seedInitialMalariaData();
+        saveDbToDisk();
         result = {
           success: true,
           message: `डेटाबेस मध्ये ६५ कर्मचारी व ३० गावांचा २०२६ चा अधिकृत रक्त नमुने डेटा यशस्वीरित्या भरला गेला! (BsData: ${bsDataEntry.length}, VillageDetails: ${villageDetails.length})`
