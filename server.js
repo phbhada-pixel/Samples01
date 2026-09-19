@@ -32,6 +32,7 @@ import {
   importVillageDetailsCsv,
   importMonthMasterCsv,
   seedInitialMalariaData,
+  clearAllTransactionData,
   getOpdBsVillagewiseSummary,
   getEmployeeVillageDistributionSummary
 } from './data/store.js';
@@ -828,6 +829,11 @@ app.post('/api/rpc', async (req, res) => {
         } else {
           result = { success: false, message: 'कृपया वैध GitHub रिपॉझिटरी लिंक टाका.' };
         }
+        break;
+      }
+
+      case 'clearAllTransactionData': {
+        result = clearAllTransactionData();
         break;
       }
 

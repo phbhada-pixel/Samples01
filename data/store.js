@@ -3079,8 +3079,12 @@ export function seedInitialMalariaData() {
   });
 }
 
-// Automatically seed initial records on startup
-seedInitialMalariaData();
+// Dummy data seeding removed - system starts with clean empty datasets
+export function clearAllTransactionData() {
+  bsDataEntry.length = 0;
+  villageDetails.length = 0;
+  return { success: true, message: "सर्व नोंदी यशस्वीरित्या रिकाम्या करण्यात आल्या." };
+}
 
 // ================= CSV BULK IMPORT HANDLERS =================
 
