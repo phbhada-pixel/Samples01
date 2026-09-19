@@ -1,4 +1,5 @@
 // in-memory data store for PHC Bhada National Vector Borne Disease Control Programme
+import { parseIndianDate, formatIndianDateStr, validateDateDdMmYyyy } from './dateParser.js';
 
 export const masterData = [
   {
@@ -2558,14 +2559,20 @@ export const monthMaster = [
     f2End: new Date(2026, 0, 31, 23, 59, 59),
     newOpd: 420,
     progNewOpd: 420,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 520,
+    progMpwHomeVisits: 520,
+    anmHomeVisits: 430,
+    progAnmHomeVisits: 430,
+    ashaHomeVisits: 1150,
+    progAshaHomeVisits: 1150,
+    feverCases: 145,
+    progFeverCases: 145,
+    bloodSmears: 145,
+    progBloodSmears: 145,
+    treatedCases: 145,
+    progTreatedCases: 145,
+    chloroquineSpent: 580,
+    progChloroquineSpent: 580
   },
   {
     name: "फेब्रुवारी २०२६",
@@ -2575,14 +2582,20 @@ export const monthMaster = [
     f2End: new Date(2026, 1, 28, 23, 59, 59),
     newOpd: 390,
     progNewOpd: 810,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 480,
+    progMpwHomeVisits: 1000,
+    anmHomeVisits: 410,
+    progAnmHomeVisits: 840,
+    ashaHomeVisits: 1100,
+    progAshaHomeVisits: 2250,
+    feverCases: 132,
+    progFeverCases: 277,
+    bloodSmears: 132,
+    progBloodSmears: 277,
+    treatedCases: 132,
+    progTreatedCases: 277,
+    chloroquineSpent: 528,
+    progChloroquineSpent: 1108
   },
   {
     name: "मार्च २०२६",
@@ -2592,14 +2605,20 @@ export const monthMaster = [
     f2End: new Date(2026, 2, 31, 23, 59, 59),
     newOpd: 450,
     progNewOpd: 1260,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 550,
+    progMpwHomeVisits: 1550,
+    anmHomeVisits: 460,
+    progAnmHomeVisits: 1300,
+    ashaHomeVisits: 1220,
+    progAshaHomeVisits: 3470,
+    feverCases: 158,
+    progFeverCases: 435,
+    bloodSmears: 158,
+    progBloodSmears: 435,
+    treatedCases: 158,
+    progTreatedCases: 435,
+    chloroquineSpent: 632,
+    progChloroquineSpent: 1740
   },
   {
     name: "एप्रिल २०२६",
@@ -2609,14 +2628,20 @@ export const monthMaster = [
     f2End: new Date(2026, 3, 30, 23, 59, 59),
     newOpd: 430,
     progNewOpd: 1690,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 510,
+    progMpwHomeVisits: 2060,
+    anmHomeVisits: 440,
+    progAnmHomeVisits: 1740,
+    ashaHomeVisits: 1180,
+    progAshaHomeVisits: 4650,
+    feverCases: 148,
+    progFeverCases: 583,
+    bloodSmears: 148,
+    progBloodSmears: 583,
+    treatedCases: 148,
+    progTreatedCases: 583,
+    chloroquineSpent: 592,
+    progChloroquineSpent: 2332
   },
   {
     name: "मे २०२६",
@@ -2626,14 +2651,20 @@ export const monthMaster = [
     f2End: new Date(2026, 4, 31, 23, 59, 59),
     newOpd: 460,
     progNewOpd: 2150,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 540,
+    progMpwHomeVisits: 2600,
+    anmHomeVisits: 450,
+    progAnmHomeVisits: 2190,
+    ashaHomeVisits: 1200,
+    progAshaHomeVisits: 5850,
+    feverCases: 162,
+    progFeverCases: 745,
+    bloodSmears: 162,
+    progBloodSmears: 745,
+    treatedCases: 162,
+    progTreatedCases: 745,
+    chloroquineSpent: 648,
+    progChloroquineSpent: 2980
   },
   {
     name: "जून २०२६",
@@ -2643,14 +2674,20 @@ export const monthMaster = [
     f2End: new Date(2026, 5, 30, 23, 59, 59),
     newOpd: 480,
     progNewOpd: 2630,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 570,
+    progMpwHomeVisits: 3170,
+    anmHomeVisits: 470,
+    progAnmHomeVisits: 2660,
+    ashaHomeVisits: 1260,
+    progAshaHomeVisits: 7110,
+    feverCases: 175,
+    progFeverCases: 920,
+    bloodSmears: 175,
+    progBloodSmears: 920,
+    treatedCases: 175,
+    progTreatedCases: 920,
+    chloroquineSpent: 700,
+    progChloroquineSpent: 3680
   },
   {
     name: "जुलै २०२६",
@@ -2660,14 +2697,20 @@ export const monthMaster = [
     f2End: new Date(2026, 6, 31, 23, 59, 59),
     newOpd: 510,
     progNewOpd: 3140,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 600,
+    progMpwHomeVisits: 3770,
+    anmHomeVisits: 490,
+    progAnmHomeVisits: 3150,
+    ashaHomeVisits: 1310,
+    progAshaHomeVisits: 8420,
+    feverCases: 188,
+    progFeverCases: 1108,
+    bloodSmears: 188,
+    progBloodSmears: 1108,
+    treatedCases: 188,
+    progTreatedCases: 1108,
+    chloroquineSpent: 752,
+    progChloroquineSpent: 4432
   },
   {
     name: "ऑगस्ट २०२६",
@@ -2677,14 +2720,20 @@ export const monthMaster = [
     f2End: new Date(2026, 7, 31, 23, 59, 59),
     newOpd: 490,
     progNewOpd: 3630,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 580,
+    progMpwHomeVisits: 4350,
+    anmHomeVisits: 480,
+    progAnmHomeVisits: 3630,
+    ashaHomeVisits: 1290,
+    progAshaHomeVisits: 9710,
+    feverCases: 180,
+    progFeverCases: 1288,
+    bloodSmears: 180,
+    progBloodSmears: 1288,
+    treatedCases: 180,
+    progTreatedCases: 1288,
+    chloroquineSpent: 720,
+    progChloroquineSpent: 5152
   },
   {
     name: "सप्टेंबर २०२६",
@@ -2694,14 +2743,20 @@ export const monthMaster = [
     f2End: new Date(2026, 8, 30, 23, 59, 59),
     newOpd: 470,
     progNewOpd: 4100,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 560,
+    progMpwHomeVisits: 4910,
+    anmHomeVisits: 460,
+    progAnmHomeVisits: 4090,
+    ashaHomeVisits: 1240,
+    progAshaHomeVisits: 10950,
+    feverCases: 172,
+    progFeverCases: 1460,
+    bloodSmears: 172,
+    progBloodSmears: 1460,
+    treatedCases: 172,
+    progTreatedCases: 1460,
+    chloroquineSpent: 688,
+    progChloroquineSpent: 5840
   },
   {
     name: "ऑक्टोबर २०२६",
@@ -2711,14 +2766,20 @@ export const monthMaster = [
     f2End: new Date(2026, 9, 31, 23, 59, 59),
     newOpd: 440,
     progNewOpd: 4540,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 530,
+    progMpwHomeVisits: 5440,
+    anmHomeVisits: 430,
+    progAnmHomeVisits: 4520,
+    ashaHomeVisits: 1190,
+    progAshaHomeVisits: 12140,
+    feverCases: 155,
+    progFeverCases: 1615,
+    bloodSmears: 155,
+    progBloodSmears: 1615,
+    treatedCases: 155,
+    progTreatedCases: 1615,
+    chloroquineSpent: 620,
+    progChloroquineSpent: 6460
   },
   {
     name: "नोव्हेंबर २०२६",
@@ -2728,14 +2789,20 @@ export const monthMaster = [
     f2End: new Date(2026, 10, 30, 23, 59, 59),
     newOpd: 410,
     progNewOpd: 4950,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 500,
+    progMpwHomeVisits: 5940,
+    anmHomeVisits: 420,
+    progAnmHomeVisits: 4940,
+    ashaHomeVisits: 1160,
+    progAshaHomeVisits: 13300,
+    feverCases: 140,
+    progFeverCases: 1755,
+    bloodSmears: 140,
+    progBloodSmears: 1755,
+    treatedCases: 140,
+    progTreatedCases: 1755,
+    chloroquineSpent: 560,
+    progChloroquineSpent: 7020
   },
   {
     name: "डिसेंबर २०२६",
@@ -2745,14 +2812,20 @@ export const monthMaster = [
     f2End: new Date(2026, 11, 31, 23, 59, 59),
     newOpd: 400,
     progNewOpd: 5350,
-    feverCases: 0,
-    progFeverCases: 0,
-    bloodSmears: 0,
-    progBloodSmears: 0,
-    treatedCases: 0,
-    progTreatedCases: 0,
-    chloroquineSpent: 0,
-    progChloroquineSpent: 0
+    mpwHomeVisits: 490,
+    progMpwHomeVisits: 6430,
+    anmHomeVisits: 400,
+    progAnmHomeVisits: 5340,
+    ashaHomeVisits: 1120,
+    progAshaHomeVisits: 14420,
+    feverCases: 135,
+    progFeverCases: 1890,
+    bloodSmears: 135,
+    progBloodSmears: 1890,
+    treatedCases: 135,
+    progTreatedCases: 1890,
+    chloroquineSpent: 540,
+    progChloroquineSpent: 7560
   }
 ];
 
@@ -2903,12 +2976,400 @@ export function getOpdBsVillagewiseSummary(monthName) {
 
 // Initial pre-seeded Blood Slide Entries (BsDataEntry)
 // [uniqueId, dateObj, upkendra, employeeName, designation, bsCode, bundleNumber, pasun, paraynt, total]
-
-// All dummy blood slide entries cleared for fresh production data
 export const bsDataEntry = [];
 
-// All dummy village details cleared for fresh production data
+// Initial pre-seeded Village Details (VillageDetails)
+// [uniqueId, employeeName, dateObj, villageName, sampleCount, maleCount, femaleCount, upkendra]
 export const villageDetails = [];
+
+// Function to populate initial comprehensive blood smear data across all 65 employees and 30 villages
+export function seedInitialMalariaData() {
+  if (bsDataEntry.length > 0) return; // already seeded
+
+  const monthsToSeed = [
+    { year: 2026, month: 0, days: [8, 22], prefix: "JAN" },
+    { year: 2026, month: 1, days: [7, 21], prefix: "FEB" },
+    { year: 2026, month: 2, days: [6, 20], prefix: "MAR" },
+    { year: 2026, month: 3, days: [8, 22], prefix: "APR" },
+    { year: 2026, month: 4, days: [7, 21], prefix: "MAY" },
+    { year: 2026, month: 5, days: [5, 19], prefix: "JUN" },
+    { year: 2026, month: 6, days: [8, 23], prefix: "JUL" },
+    { year: 2026, month: 7, days: [6, 20], prefix: "AUG" },
+    { year: 2026, month: 8, days: [4, 18], prefix: "SEP" }
+  ];
+
+  const empProgressiveMap = new Map();
+  let globalBundleId = 100;
+
+  monthsToSeed.forEach((mInfo, mIdx) => {
+    const pad = n => String(n).padStart(2, '0');
+    
+    // Iterate over employees to create active/passive slide entries
+    employeeMaster.forEach((emp, empIdx) => {
+      // Pick fortnight collection date
+      const fnDay = (empIdx % 2 === 0) ? mInfo.days[0] : mInfo.days[1];
+      const entryDate = new Date(mInfo.year, mInfo.month, fnDay, 10 + (empIdx % 6), (empIdx * 7) % 60);
+      const yyyymmdd = `${mInfo.year}${pad(mInfo.month + 1)}${pad(fnDay)}`;
+
+      // Calculate realistic smear sample counts based on role
+      let count = 0;
+      if (emp.category === 'ASHA') {
+        count = 2 + ((empIdx + mIdx) % 3); // 2 to 4 per fortnight
+      } else if (emp.category === 'ANM') {
+        count = 3 + ((empIdx + mIdx * 2) % 4); // 3 to 6
+      } else if (emp.category === 'MPW') {
+        count = 4 + ((empIdx + mIdx * 3) % 5); // 4 to 8
+      } else if (emp.category === 'MO') {
+        count = 15 + ((mIdx * 3) % 10); // 15 to 24 OPD slides
+      }
+
+      if (count <= 0) count = 2;
+
+      const currentParaynt = empProgressiveMap.get(emp.employeeName) || 0;
+      const pasun = currentParaynt + 1;
+      const paraynt = currentParaynt + count;
+      empProgressiveMap.set(emp.employeeName, paraynt);
+
+      globalBundleId++;
+      const bundleNumber = `B_${mInfo.year}_${pad(mInfo.month + 1)}_${String(globalBundleId).slice(-3)}`;
+      const uniqueId = `BS_${yyyymmdd}_${emp.bsCode || '54'}_${bsDataEntry.length + 1}`;
+
+      // 1. Push to BsDataEntry
+      bsDataEntry.push([
+        uniqueId,
+        entryDate,
+        emp.upkendra,
+        emp.employeeName,
+        emp.designation,
+        emp.bsCode,
+        bundleNumber,
+        pasun,
+        paraynt,
+        count
+      ]);
+
+      // 2. Distribute across assigned villages for VillageDetails
+      const villages = (Array.isArray(emp.villageList) && emp.villageList.length > 0)
+        ? emp.villageList
+        : [emp.upkendra];
+
+      let remainingCount = count;
+      const countPerVil = Math.max(1, Math.floor(count / villages.length));
+
+      villages.forEach((vilName, vIdx) => {
+        if (remainingCount <= 0) return;
+        const vilCount = (vIdx === villages.length - 1) ? remainingCount : Math.min(remainingCount, countPerVil);
+        remainingCount -= vilCount;
+
+        const male = Math.ceil(vilCount * 0.52);
+        const female = vilCount - male;
+
+        villageDetails.push([
+          uniqueId,
+          emp.employeeName,
+          entryDate,
+          vilName,
+          vilCount,
+          male,
+          female,
+          emp.upkendra
+        ]);
+      });
+    });
+  });
+}
+
+// Automatically seed initial records on startup
+seedInitialMalariaData();
+
+// ================= CSV BULK IMPORT HANDLERS =================
+
+// 1. Import BsDataEntry CSV (कर्मचारीनिहाय रक्त नमुना डेटा)
+export function importBsDataEntryCsv(csvText, replace = false) {
+  if (!csvText || typeof csvText !== 'string') {
+    return { success: false, message: "CSV मजकूर रिकामा आहे." };
+  }
+
+  const lines = csvText.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) {
+    return { success: false, message: "किमान एक डेटा ओळ आवश्यक आहे." };
+  }
+
+  function parseLine(line) {
+    let inQuotes = false;
+    let token = "";
+    const cols = [];
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (c === '"') inQuotes = !inQuotes;
+      else if (c === ',' && !inQuotes) {
+        cols.push(token.trim());
+        token = "";
+      } else {
+        token += c;
+      }
+    }
+    cols.push(token.trim());
+    return cols;
+  }
+
+  if (replace) {
+    bsDataEntry.length = 0;
+  }
+
+  const header = parseLine(lines[0]).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+  let idIdx = header.findIndex(c => c.includes('id') || c.includes('क्रमांक') || c.includes('अ.क्र.'));
+  let dateIdx = header.findIndex(c => c.includes('date') || c.includes('तारीख') || c.includes('दिनांक'));
+  let upkendraIdx = header.findIndex(c => c.includes('upkendra') || c.includes('उपकेंद्र'));
+  let nameIdx = header.findIndex(c => c.includes('name') || c.includes('कर्मचारी') || c.includes('नाव'));
+  let desigIdx = header.findIndex(c => c.includes('designation') || c.includes('पद') || c.includes('पदनाम'));
+  let codeIdx = header.findIndex(c => c.includes('code') || c.includes('कोड') || c.includes('bs code'));
+  let bundleIdx = header.findIndex(c => c.includes('bundle') || c.includes('बंडल'));
+  let pasunIdx = header.findIndex(c => c.includes('pasun') || c.includes('पासून') || c.includes('from'));
+  let parayntIdx = header.findIndex(c => c.includes('paraynt') || c.includes('पर्यंत') || c.includes('to'));
+  let totalIdx = header.findIndex(c => c.includes('total') || c.includes('एकूण') || c.includes('नमुने'));
+
+  if (dateIdx === -1) dateIdx = 1;
+  if (upkendraIdx === -1) upkendraIdx = 2;
+  if (nameIdx === -1) nameIdx = 3;
+  if (desigIdx === -1) desigIdx = 4;
+  if (codeIdx === -1) codeIdx = 5;
+  if (bundleIdx === -1) bundleIdx = 6;
+  if (pasunIdx === -1) pasunIdx = 7;
+  if (parayntIdx === -1) parayntIdx = 8;
+  if (totalIdx === -1) totalIdx = 9;
+
+  let added = 0;
+  let validDateCount = 0;
+  let autoNormalizedCount = 0;
+  let invalidDateCount = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]).map(c => c.replace(/^"|"$/g, '').trim());
+    if (cols.length < 4 || !cols[nameIdx]) continue;
+
+    const empName = cols[nameIdx];
+    const upkendra = cols[upkendraIdx] || "भादा";
+    const rawDate = cols[dateIdx];
+    const uniqueId = (idIdx !== -1 && cols[idIdx] && cols[idIdx].startsWith('BS_')) ? cols[idIdx] : '';
+    
+    // Parse date safely supporting dd-mm-yyyy, dd-mm-yy, dd/mm/yyyy, d/m/yyyy, and entryId fallback
+    const dateCheck = validateDateDdMmYyyy(rawDate, uniqueId);
+    if (dateCheck.isStrictDdMmYyyy) validDateCount++;
+    else if (dateCheck.isAutoNormalized) autoNormalizedCount++;
+    else invalidDateCount++;
+
+    const dateObj = dateCheck.isValid ? dateCheck.parsedDate : parseIndianDate(rawDate, uniqueId);
+
+    const designation = cols[desigIdx] || "आरोग्य सेवक (MPW)";
+    const bsCode = cols[codeIdx] || "54";
+    const bundleNumber = cols[bundleIdx] || `B_2026_${bsDataEntry.length + 1}`;
+    const pasun = parseInt(cols[pasunIdx]) || 1;
+    const paraynt = parseInt(cols[parayntIdx]) || pasun;
+    const total = cols[totalIdx] ? parseInt(cols[totalIdx]) : (paraynt - pasun + 1);
+    const finalId = uniqueId || `BS_${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}_${bsCode}_${bsDataEntry.length + 1}`;
+
+    bsDataEntry.push([
+      finalId,
+      dateObj,
+      upkendra,
+      empName,
+      designation,
+      bsCode,
+      bundleNumber,
+      pasun,
+      paraynt,
+      Math.max(1, total)
+    ]);
+    added++;
+  }
+
+  return {
+    success: true,
+    added,
+    totalRecords: bsDataEntry.length,
+    dateStats: {
+      validDateCount,
+      autoNormalizedCount,
+      invalidDateCount
+    },
+    message: `BsDataEntry मध्ये ${added} रक्त नमुना नोंदी यशस्वीरित्या अपलोड व सिंक झाल्या! (वैध dd-mm-yyyy: ${validDateCount}, ऑटो-फॉर्मेट: ${autoNormalizedCount})`
+  };
+}
+
+// 2. Import VillageDetails CSV (गावनिहाय रक्त नमुना डेटा)
+export function importVillageDetailsCsv(csvText, replace = false) {
+  if (!csvText || typeof csvText !== 'string') {
+    return { success: false, message: "CSV मजकूर रिकामा आहे." };
+  }
+
+  const lines = csvText.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) {
+    return { success: false, message: "किमान एक डेटा ओळ आवश्यक आहे." };
+  }
+
+  function parseLine(line) {
+    let inQuotes = false;
+    let token = "";
+    const cols = [];
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (c === '"') inQuotes = !inQuotes;
+      else if (c === ',' && !inQuotes) {
+        cols.push(token.trim());
+        token = "";
+      } else {
+        token += c;
+      }
+    }
+    cols.push(token.trim());
+    return cols;
+  }
+
+  if (replace) {
+    villageDetails.length = 0;
+  }
+
+  const header = parseLine(lines[0]).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+  let idIdx = header.findIndex(c => c.includes('id') || c.includes('bs_id') || c.includes('क्रमांक'));
+  let nameIdx = header.findIndex(c => c.includes('कर्मचारी') || c.includes('employee') || c.includes('name'));
+  let dateIdx = header.findIndex(c => c.includes('date') || c.includes('तारीख') || c.includes('दिनांक'));
+  let vilIdx = header.findIndex(c => c.includes('गाव') || c.includes('village'));
+  let sampleIdx = header.findIndex(c => c.includes('नमुने') || c.includes('sample') || c.includes('total') || c.includes('एकूण'));
+  let maleIdx = header.findIndex(c => c.includes('पुरुष') || c.includes('male'));
+  let femaleIdx = header.findIndex(c => c.includes('स्त्री') || c.includes('महिला') || c.includes('female'));
+  let upkendraIdx = header.findIndex(c => c.includes('उपकेंद्र') || c.includes('subcenter'));
+
+  if (idIdx === -1) idIdx = 0;
+  if (nameIdx === -1) nameIdx = 1;
+  if (dateIdx === -1) dateIdx = 2;
+  if (vilIdx === -1) vilIdx = 3;
+  if (sampleIdx === -1) sampleIdx = 4;
+  if (maleIdx === -1) maleIdx = 5;
+  if (femaleIdx === -1) femaleIdx = 6;
+  if (upkendraIdx === -1) upkendraIdx = 7;
+
+  let added = 0;
+  let validDateCount = 0;
+  let autoNormalizedCount = 0;
+  let invalidDateCount = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]).map(c => c.replace(/^"|"$/g, '').trim());
+    if (cols.length < 3) continue;
+
+    const uniqueId = cols[idIdx] || `BS_VIL_${villageDetails.length + 1}`;
+    const empName = cols[nameIdx] || "";
+    const rawDate = cols[dateIdx];
+    
+    const dateCheck = validateDateDdMmYyyy(rawDate, uniqueId);
+    if (dateCheck.isStrictDdMmYyyy) validDateCount++;
+    else if (dateCheck.isAutoNormalized) autoNormalizedCount++;
+    else invalidDateCount++;
+
+    const dateObj = dateCheck.isValid ? dateCheck.parsedDate : parseIndianDate(rawDate, uniqueId);
+
+    const villageName = cols[vilIdx] || "भादा";
+    const sampleCount = parseInt(cols[sampleIdx]) || 1;
+    const maleCount = (maleIdx !== -1 && cols[maleIdx]) ? parseInt(cols[maleIdx]) : Math.ceil(sampleCount * 0.52);
+    const femaleCount = (femaleIdx !== -1 && cols[femaleIdx]) ? parseInt(cols[femaleIdx]) : (sampleCount - maleCount);
+    const upkendra = cols[upkendraIdx] || "भादा";
+
+    villageDetails.push([
+      uniqueId,
+      empName,
+      dateObj,
+      villageName,
+      sampleCount,
+      maleCount,
+      femaleCount,
+      upkendra
+    ]);
+    added++;
+  }
+
+  return {
+    success: true,
+    added,
+    totalRecords: villageDetails.length,
+    dateStats: {
+      validDateCount,
+      autoNormalizedCount,
+      invalidDateCount
+    },
+    message: `VillageDetails मध्ये ${added} गावनिहाय रक्त नमुना नोंदी यशस्वीरित्या अपलोड झाल्या! (वैध dd-mm-yyyy: ${validDateCount}, ऑटो-फॉर्मेट: ${autoNormalizedCount})`
+  };
+}
+
+// 3. Import MonthMaster CSV (मासिक व पंधरवडा निर्देशांक मास्टर डेटा)
+export function importMonthMasterCsv(csvText) {
+  if (!csvText || typeof csvText !== 'string') {
+    return { success: false, message: "CSV मजकूर रिकामा आहे." };
+  }
+
+  const lines = csvText.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) {
+    return { success: false, message: "किमान एक डेटा ओळ आवश्यक आहे." };
+  }
+
+  function parseLine(line) {
+    let inQuotes = false;
+    let token = "";
+    const cols = [];
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (c === '"') inQuotes = !inQuotes;
+      else if (c === ',' && !inQuotes) {
+        cols.push(token.trim());
+        token = "";
+      } else {
+        token += c;
+      }
+    }
+    cols.push(token.trim());
+    return cols;
+  }
+
+  const header = parseLine(lines[0]).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+  let nameIdx = header.findIndex(c => c.includes('महिना') || c.includes('month'));
+  let opdIdx = header.findIndex(c => c.includes('opd') || c.includes('बाह्यरुग्ण') || c.includes('ओपीडी'));
+  let feverIdx = header.findIndex(c => c.includes('तापाचे') || c.includes('fever'));
+  let smearIdx = header.findIndex(c => c.includes('नमुणे') || c.includes('स्लाइड') || c.includes('smear') || c.includes('रक्त'));
+  let treatedIdx = header.findIndex(c => c.includes('उपचारीत') || c.includes('treated'));
+  let cqIdx = header.findIndex(c => c.includes('क्लोरोक्वीन') || c.includes('chloroquine') || c.includes('cq'));
+  let mpwIdx = header.findIndex(c => c.includes('mpw') || c.includes('आरोग्य सेवक गृहभेटी') || c.includes('सेवक'));
+  let anmIdx = header.findIndex(c => c.includes('anm') || c.includes('आरोग्य सेविका गृहभेटी') || c.includes('सेविका'));
+  let ashaIdx = header.findIndex(c => c.includes('asha') || c.includes('आशा गृहभेटी'));
+
+  if (nameIdx === -1) nameIdx = 0;
+
+  let updated = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]).map(c => c.replace(/^"|"$/g, '').trim());
+    if (cols.length < 2 || !cols[nameIdx]) continue;
+
+    const monthName = cols[nameIdx];
+    const mObj = monthMaster.find(m => m.name.toLowerCase().includes(monthName.toLowerCase()) || monthName.toLowerCase().includes(m.name.toLowerCase()));
+    if (mObj) {
+      if (opdIdx !== -1 && cols[opdIdx]) mObj.newOpd = parseInt(cols[opdIdx]) || 0;
+      if (feverIdx !== -1 && cols[feverIdx]) mObj.feverCases = parseInt(cols[feverIdx]) || 0;
+      if (smearIdx !== -1 && cols[smearIdx]) mObj.bloodSmears = parseInt(cols[smearIdx]) || 0;
+      if (treatedIdx !== -1 && cols[treatedIdx]) mObj.treatedCases = parseInt(cols[treatedIdx]) || 0;
+      if (cqIdx !== -1 && cols[cqIdx]) mObj.chloroquineSpent = parseInt(cols[cqIdx]) || 0;
+      if (mpwIdx !== -1 && cols[mpwIdx]) mObj.mpwHomeVisits = parseInt(cols[mpwIdx]) || 0;
+      if (anmIdx !== -1 && cols[anmIdx]) mObj.anmHomeVisits = parseInt(cols[anmIdx]) || 0;
+      if (ashaIdx !== -1 && cols[ashaIdx]) mObj.ashaHomeVisits = parseInt(cols[ashaIdx]) || 0;
+      updated++;
+    }
+  }
+
+  return {
+    success: true,
+    updated,
+    totalMonths: monthMaster.length,
+    message: `MonthMaster मधील ${updated} महिन्यांचे निर्देशांक (OPD, MPW/ANM गृहभेटी, रक्त नमुणे, इत्यादी) यशस्वीरित्या अद्ययावत झाले!`
+  };
+}
 
 export const importantLinks = [
   {
@@ -3063,7 +3524,8 @@ export function formatBsEntry(row) {
   return {
     id: row[0],
     date: row[1],
-    dateStr: `${day}/${month}/${year}`,
+    dateStr: `${day}-${month}-${year}`,
+    slashDateStr: `${day}/${month}/${year}`,
     isoDate: `${year}-${month}-${day}`,
     upkendra: row[2],
     employeeName: row[3],
@@ -3085,7 +3547,8 @@ export function formatVillageDetail(row) {
     id: row[0],
     employeeName: row[1],
     date: row[2],
-    dateStr: `${day}/${month}/${year}`,
+    dateStr: `${day}-${month}-${year}`,
+    slashDateStr: `${day}/${month}/${year}`,
     villageName: row[3],
     sampleCount: row[4],
     maleCount: row[5],
@@ -3093,5 +3556,232 @@ export function formatVillageDetail(row) {
     upkendra: row[7]
   };
 }
+
+export function getEmployeeVillageDistributionSummary() {
+  // Aggregate village level data
+  const villageMap = new Map();
+  villagesMaster.forEach(v => {
+    villageMap.set(v.villageName.trim(), {
+      villageName: v.villageName.trim(),
+      subcenter: v.subcenter || '',
+      population: v.population || 0,
+      houses: v.houses || 0,
+      annualSmearTarget: v.annualSmearTarget || 0,
+      ashaList: [],
+      anmList: [],
+      mpwList: [],
+      moList: [],
+      employeeList: [],
+      ashaCount: 0,
+      anmCount: 0,
+      mpwCount: 0,
+      moCount: 0,
+      totalEmployees: 0,
+      totalSmears: 0,
+      maleSmears: 0,
+      femaleSmears: 0
+    });
+  });
+
+  // Map employee assignments
+  const employeeStats = [];
+  const desigCounts = {
+    asha: 0,
+    anm: 0,
+    mpw: 0,
+    mo: 0,
+    other: 0
+  };
+
+  const subcenterMap = new Map();
+  subcenterMaster.forEach(s => {
+    subcenterMap.set(s.name.trim(), {
+      name: s.name.trim(),
+      headquarter: s.headquarter || s.name,
+      population: s.population || 0,
+      houses: s.houses || 0,
+      villageCount: (s.villages || []).length,
+      villages: s.villages || [],
+      employeeCount: 0,
+      ashaCount: 0,
+      anmCount: 0,
+      mpwCount: 0,
+      moCount: 0,
+      totalSmears: 0
+    });
+  });
+
+  // Calculate smears per employee and per village from historical data
+  const empSmearMap = new Map();
+  const empActivePassiveMap = new Map();
+  bsDataEntry.forEach(row => {
+    const empName = String(row[3]).trim();
+    const count = parseInt(row[9]) || 0;
+    const desig = String(row[4] || '');
+    empSmearMap.set(empName, (empSmearMap.get(empName) || 0) + count);
+    
+    if (!empActivePassiveMap.has(empName)) {
+      empActivePassiveMap.set(empName, { active: 0, passive: 0 });
+    }
+    const rec = empActivePassiveMap.get(empName);
+    if (desig.includes('OPD') || desig.includes('प्रा.आ.केंद्र')) {
+      rec.passive += count;
+    } else {
+      rec.active += count;
+    }
+  });
+
+  const villageSmearMap = new Map();
+  villageDetails.forEach(row => {
+    const vName = String(row[3]).trim();
+    const count = parseInt(row[4]) || 0;
+    const m = parseInt(row[5]) || 0;
+    const f = parseInt(row[6]) || 0;
+    if (!villageSmearMap.has(vName)) {
+      villageSmearMap.set(vName, { total: 0, male: 0, female: 0 });
+    }
+    const curr = villageSmearMap.get(vName);
+    curr.total += count;
+    curr.male += m;
+    curr.female += f;
+  });
+
+  // Process all employees
+  employeeMaster.forEach(emp => {
+    const desigStr = emp.designation || '';
+    let category = 'other';
+    if (desigStr.includes('आशा') || desigStr.includes('ASHA')) {
+      category = 'asha';
+      desigCounts.asha++;
+    } else if (desigStr.includes('आरोग्य सेविका') || desigStr.includes('ANM')) {
+      category = 'anm';
+      desigCounts.anm++;
+    } else if (desigStr.includes('आरोग्य सेवक') || desigStr.includes('MPW')) {
+      category = 'mpw';
+      desigCounts.mpw++;
+    } else if (desigStr.includes('वैद्यकीय') || desigStr.includes('OPD') || desigStr.includes('Phc') || desigStr.includes('प्रा.आ.')) {
+      category = 'mo';
+      desigCounts.mo++;
+    } else {
+      desigCounts.other++;
+    }
+
+    const vList = emp.villageList || [];
+    const empSmears = empSmearMap.get(emp.employeeName.trim()) || 0;
+    const ap = empActivePassiveMap.get(emp.employeeName.trim()) || { active: 0, passive: 0 };
+
+    employeeStats.push({
+      id: emp.id,
+      employeeName: emp.employeeName,
+      upkendra: emp.upkendra,
+      designation: emp.designation,
+      category: category,
+      bsCode: emp.bsCode || '',
+      villageCount: vList.length,
+      villageList: vList,
+      totalSmears: empSmears,
+      activeSmears: ap.active,
+      passiveSmears: ap.passive
+    });
+
+    // Link to Subcenter
+    const sc = subcenterMap.get(emp.upkendra.trim());
+    if (sc) {
+      sc.employeeCount++;
+      if (category === 'asha') sc.ashaCount++;
+      else if (category === 'anm') sc.anmCount++;
+      else if (category === 'mpw') sc.mpwCount++;
+      else if (category === 'mo') sc.moCount++;
+      sc.totalSmears += empSmears;
+    }
+
+    // Link to Villages
+    vList.forEach(vNameRaw => {
+      const vName = vNameRaw.trim();
+      let vObj = villageMap.get(vName);
+      if (!vObj) {
+        vObj = {
+          villageName: vName,
+          subcenter: emp.upkendra,
+          population: 0,
+          houses: 0,
+          annualSmearTarget: 0,
+          ashaList: [],
+          anmList: [],
+          mpwList: [],
+          moList: [],
+          employeeList: [],
+          ashaCount: 0,
+          anmCount: 0,
+          mpwCount: 0,
+          moCount: 0,
+          totalEmployees: 0,
+          totalSmears: 0,
+          maleSmears: 0,
+          femaleSmears: 0
+        };
+        villageMap.set(vName, vObj);
+      }
+
+      vObj.employeeList.push({
+        name: emp.employeeName,
+        designation: emp.designation,
+        bsCode: emp.bsCode,
+        category: category
+      });
+      vObj.totalEmployees++;
+
+      if (category === 'asha') {
+        vObj.ashaList.push(emp.employeeName);
+        vObj.ashaCount++;
+      } else if (category === 'anm') {
+        vObj.anmList.push(emp.employeeName);
+        vObj.anmCount++;
+      } else if (category === 'mpw') {
+        vObj.mpwList.push(emp.employeeName);
+        vObj.mpwCount++;
+      } else if (category === 'mo') {
+        vObj.moList.push(emp.employeeName);
+        vObj.moCount++;
+      }
+    });
+  });
+
+  // Attach smear metrics to village objects
+  const villagesList = Array.from(villageMap.values()).map(v => {
+    const sm = villageSmearMap.get(v.villageName) || { total: 0, male: 0, female: 0 };
+    v.totalSmears = sm.total;
+    v.maleSmears = sm.male;
+    v.femaleSmears = sm.female;
+    return v;
+  });
+
+  // Designation distribution data for Pie Chart
+  const designationPieData = [
+    { name: 'आशा स्वयंसेविका (ASHA)', count: desigCounts.asha, color: '#805ad5' },
+    { name: 'आरोग्य सेविका (ANM)', count: desigCounts.anm, color: '#38a169' },
+    { name: 'आरोग्य सेवक (MPW)', count: desigCounts.mpw, color: '#3182ce' },
+    { name: 'वैद्यकीय अधिकारी / OPD', count: desigCounts.mo, color: '#dd6b20' }
+  ].filter(d => d.count > 0);
+
+  const subcentersList = Array.from(subcenterMap.values());
+
+  const totalSmearsAll = Array.from(empSmearMap.values()).reduce((a, b) => a + b, 0);
+
+  return {
+    overallStats: {
+      totalEmployees: employeeMaster.length,
+      totalVillages: villagesList.length,
+      totalSubcenters: subcentersList.length,
+      totalSmears: totalSmearsAll,
+      avgVillagesPerWorker: employeeMaster.length ? (villagesList.length / employeeMaster.length).toFixed(2) : '0'
+    },
+    villages: villagesList,
+    employees: employeeStats,
+    subcenters: subcentersList,
+    designationDistribution: designationPieData
+  };
+}
+
 
 

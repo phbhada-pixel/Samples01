@@ -28,7 +28,12 @@ import {
   saveVillage,
   deleteVillage,
   importMasterDataFromCsv,
-  getOpdBsVillagewiseSummary
+  importBsDataEntryCsv,
+  importVillageDetailsCsv,
+  importMonthMasterCsv,
+  seedInitialMalariaData,
+  getOpdBsVillagewiseSummary,
+  getEmployeeVillageDistributionSummary
 } from './data/store.js';
 
 import {
@@ -257,6 +262,66 @@ app.get('/api/export/monthly-indicators.csv', (req, res) => {
   res.send(csvContent);
 });
 
+// CSV Export for Month Master (Fortnight, OPD, MPW Visits, ANM Visits, ASHA Visits, Fever, Smears, Treatment, CQ)
+app.get('/api/export/month-master.csv', (req, res) => {
+  const headers = [
+    'महिना (Month)',
+    'पंधरवडा १ सुरु (FN1 Start)',
+    'पंधरवडा १ शेवट (FN1 End)',
+    'पंधरवडा २ सुरु (FN2 Start)',
+    'पंधरवडा २ शेवट (FN2 End)',
+    'नवीन बाह्यरुग्ण मासिक (New OPD Monthly)',
+    'नवीन बाह्यरुग्ण प्रगत (New OPD Progressive)',
+    'MPW गृहभेटी मासिक (MPW Home Visits)',
+    'MPW गृहभेटी प्रगत (MPW Visits Progressive)',
+    'ANM गृहभेटी मासिक (ANM Home Visits)',
+    'ANM गृहभेटी प्रगत (ANM Visits Progressive)',
+    'आशा गृहभेटी मासिक (ASHA Home Visits)',
+    'आशा गृहभेटी प्रगत (ASHA Visits Progressive)',
+    'तापाचे रुग्ण मासिक (Fever Cases Monthly)',
+    'तापाचे रुग्ण प्रगत (Fever Cases Progressive)',
+    'घेतलेले रक्त नमुणे मासिक (Blood Smears Monthly)',
+    'घेतलेले रक्त नमुणे प्रगत (Blood Smears Progressive)',
+    'उपचारीत रुग्ण मासिक (Treated Cases Monthly)',
+    'उपचारीत रुग्ण प्रगत (Treated Cases Progressive)',
+    'क्लोरोक्वीन खर्च मासिक (Chloroquine Monthly)',
+    'क्लोरोक्वीन खर्च प्रगत (Chloroquine Progressive)'
+  ];
+
+  const fmtD = d => d instanceof Date ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : String(d || '');
+
+  const rows = monthMaster.map(m => {
+    return [
+      `"${m.name}"`,
+      `"${fmtD(m.f1Start)}"`,
+      `"${fmtD(m.f1End)}"`,
+      `"${fmtD(m.f2Start)}"`,
+      `"${fmtD(m.f2End)}"`,
+      m.newOpd || 0,
+      m.progNewOpd || 0,
+      m.mpwHomeVisits || 0,
+      m.progMpwHomeVisits || 0,
+      m.anmHomeVisits || 0,
+      m.progAnmHomeVisits || 0,
+      m.ashaHomeVisits || 0,
+      m.progAshaHomeVisits || 0,
+      m.feverCases || 0,
+      m.progFeverCases || 0,
+      m.bloodSmears || 0,
+      m.progBloodSmears || 0,
+      m.treatedCases || 0,
+      m.progTreatedCases || 0,
+      m.chloroquineSpent || 0,
+      m.progChloroquineSpent || 0
+    ].join(',');
+  });
+
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="MonthMaster_PHC_Bhada_2026.csv"');
+  res.send(csvContent);
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -265,6 +330,16 @@ app.get('/api/health', (req, res) => {
     records: bsDataEntry.length,
     villageRecords: villageDetails.length
   });
+});
+
+// Employee-Village Distribution Analytics Endpoint
+app.get('/api/analytics/employee-village-distribution', (req, res) => {
+  try {
+    const summary = getEmployeeVillageDistributionSummary();
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Background sync helper to send rows to Google Sheet Webhook
@@ -952,6 +1027,44 @@ app.post('/api/rpc', async (req, res) => {
       case 'importMasterDataFromCsv': {
         const [csvText] = args;
         result = importMasterDataFromCsv(csvText);
+        break;
+      }
+
+      case 'importBsDataEntryCsv':
+      case 'uploadBsDataCsv': {
+        const [csvText, replace] = args;
+        result = importBsDataEntryCsv(csvText, !!replace);
+        break;
+      }
+
+      case 'importVillageDetailsCsv':
+      case 'uploadVillageDetailsCsv': {
+        const [csvText, replace] = args;
+        result = importVillageDetailsCsv(csvText, !!replace);
+        break;
+      }
+
+      case 'importMonthMasterCsv':
+      case 'uploadMonthMasterCsv': {
+        const [csvText] = args;
+        result = importMonthMasterCsv(csvText);
+        break;
+      }
+
+      case 'seedInitialData':
+      case 'resetToDefaultData': {
+        bsDataEntry.length = 0;
+        villageDetails.length = 0;
+        seedInitialMalariaData();
+        result = {
+          success: true,
+          message: `डेटाबेस मध्ये ६५ कर्मचारी व ३० गावांचा २०२६ चा अधिकृत रक्त नमुने डेटा यशस्वीरित्या भरला गेला! (BsData: ${bsDataEntry.length}, VillageDetails: ${villageDetails.length})`
+        };
+        break;
+      }
+
+      case 'getEmployeeVillageDistributionSummary': {
+        result = getEmployeeVillageDistributionSummary();
         break;
       }
 

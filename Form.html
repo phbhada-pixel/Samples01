@@ -7,6 +7,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
+  <!-- React 18 & Recharts 2 UMD for Advanced Analytics Visualizations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+  
   <!-- Google Apps Script Client Bridge for Web Runtime with Auto-Retry & Resiliency -->
   <script>
     window.google = window.google || {};
@@ -98,171 +104,751 @@
   </script>
   
   <style>
-    /* ================= BASE STYLES ================= */
+    /* ================= BASE & RESPONSIVE THEME ================= */
     :root {
       --primary: #00796b; --primary-dark: #004d40; --primary-light: #e0f2f1;
       --bg-color: #f4f7f6; --surface: #ffffff; --text-main: #2d3748; --text-muted: #718096;
       --border-color: #e2e8f0; --radius: 12px;
       --active-color: #38a169; --passive-color: #3182ce;
       --shadow-sm: 0 2px 4px rgba(0,0,0,0.05); --shadow-md: 0 4px 12px rgba(0,0,0,0.08); --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+      --bottom-nav-height: 62px;
     }
 
-    body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px 10px; color: var(--text-main); }
-    
-    /* ================= HEADER & FOOTER ================= */
-    .app-header {
-      max-width: 1100px; margin: 0 auto 25px auto;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: white; padding: 20px; border-radius: 12px;
-      text-align: center; font-weight: 700; letter-spacing: 0.5px; box-shadow: var(--shadow-md);
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 20px 14px;
+      color: var(--text-main);
+      -webkit-tap-highlight-color: transparent;
     }
-    .app-footer { max-width: 1100px; margin: 40px auto 0 auto; text-align: center; padding-top: 20px; border-top: 2px solid var(--border-color); color: var(--text-muted); font-size: 13.5px; line-height: 1.6; }
+    
+    /* ================= HEADER & TOP BAR ================= */
+    .app-header {
+      max-width: 1400px;
+      margin: 0 auto 20px auto;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 20px 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-title-box { text-align: left; }
+    .header-title { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .header-sub { font-size: 14px; font-weight: 500; opacity: 0.92; margin-top: 4px; }
+    .header-badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .header-chip {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(4px);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    
+    /* Mobile Top App Bar */
+    .mobile-appbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      padding: 12px 14px;
+      box-shadow: var(--shadow-md);
+      margin: -20px -14px 14px -14px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mobile-appbar-left { display: flex; align-items: center; gap: 10px; }
+    .mobile-menu-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      min-width: 40px;
+    }
+    .mobile-menu-btn:active { background: rgba(255,255,255,0.35); }
+    .mobile-appbar-title { font-size: 16px; font-weight: 700; line-height: 1.2; }
+    .mobile-appbar-sub { font-size: 11px; opacity: 0.85; }
+
+    /* Mobile Drawer (Slide-out menu) */
+    .mobile-drawer-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(3px);
+      z-index: 10001;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-drawer-overlay.open { display: block; opacity: 1; }
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 290px;
+      max-width: 82%;
+      height: 100%;
+      background: #ffffff;
+      z-index: 10002;
+      box-shadow: 4px 0 25px rgba(0,0,0,0.25);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .mobile-drawer.open { transform: translateX(0); }
+    .mobile-drawer-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      padding: 18px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mobile-drawer-close {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mobile-drawer-nav { padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .mobile-drawer-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+      width: 100%;
+      min-height: 44px;
+    }
+    .mobile-drawer-btn:active, .mobile-drawer-btn.active {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--bottom-nav-height);
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -3px 15px rgba(0,0,0,0.08);
+      z-index: 9999;
+      justify-content: space-around;
+      align-items: center;
+      padding: 4px 6px;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 2px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      min-height: 48px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .bottom-nav-icon { font-size: 18px; line-height: 1; margin-bottom: 2px; }
+    .bottom-nav-label { font-size: 10.5px; white-space: nowrap; }
+    .bottom-nav-item.active {
+      color: var(--primary-dark);
+      font-weight: 700;
+      background: var(--primary-light);
+    }
+
+    .app-footer {
+      max-width: 1400px;
+      margin: 35px auto 0 auto;
+      text-align: center;
+      padding-top: 18px;
+      border-top: 2px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
     .app-footer b { color: var(--primary-dark); font-weight: 600; }
     .heart { color: #e53e3e; font-size: 14px; animation: heartbeat 1.5s infinite; display: inline-block; margin: 0 3px; }
     @keyframes heartbeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
 
-    /* ================= DASHBOARD LAYOUT ================= */
-    .dashboard-wrapper { display: flex; max-width: 1100px; margin: 0 auto; gap: 25px; align-items: flex-start; }
-
-    /* LEFT SIDEBAR */
-    .sidebar.tab-nav {
-      display: flex; flex-direction: column; width: 260px; background: var(--surface);
-      padding: 20px 15px; border-radius: var(--radius); box-shadow: var(--shadow-md);
-      position: sticky; top: 20px;
+    /* ================= DASHBOARD WRAPPER & SIDEBAR ================= */
+    .dashboard-wrapper {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 22px;
+      align-items: flex-start;
+      width: 100%;
     }
-    .sidebar-title { font-size: 14px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 15px; padding-left: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+
+    /* LEFT SIDEBAR (Desktop) */
+    .sidebar.tab-nav {
+      display: flex;
+      flex-direction: column;
+      width: 270px;
+      min-width: 250px;
+      background: var(--surface);
+      padding: 18px 14px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 18px;
+      border: 1px solid var(--border-color);
+    }
+    .sidebar-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     
     .tab-btn {
-      width: 100%; text-align: left; padding: 14px 20px; margin-bottom: 8px;
-      border: none; background: transparent; cursor: pointer; border-radius: 8px;
-      font-size: 15px; font-weight: 600; color: var(--text-muted); transition: all 0.3s ease;
-      border-left: 4px solid transparent; display: flex; align-items: center; gap: 12px;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      margin-bottom: 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.25s ease;
+      border-left: 4px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
     }
-    .tab-btn:hover { background: #f8fafc; color: var(--primary); transform: translateX(4px); }
-    .tab-btn.active { background: var(--primary-light); color: var(--primary-dark); border-left: 4px solid var(--primary); font-weight: 700; }
+    .tab-btn:hover { background: #f8fafc; color: var(--primary); transform: translateX(3px); }
+    .tab-btn.active {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-left: 4px solid var(--primary);
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0, 121, 107, 0.12);
+    }
 
     /* RIGHT MAIN CONTENT */
-    .main-content { flex: 1; background: var(--surface); padding: 30px; border-radius: 16px; box-shadow: var(--shadow-lg); min-height: 500px; }
-    .tab-pane { display: none; animation: fadeIn 0.4s ease; }
+    .main-content {
+      flex: 1;
+      background: var(--surface);
+      padding: 26px 28px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      min-height: 520px;
+      min-width: 0;
+      border: 1px solid var(--border-color);
+    }
+    .tab-pane { display: none; animation: fadeIn 0.35s ease; }
     .tab-pane.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
     /* ================= STATS CARDS ================= */
-    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-    .stat-card { background: #fff; border: 1px solid var(--border-color); padding: 20px; border-radius: 15px; box-shadow: var(--shadow-sm); text-align: center; }
-    .stat-card h4 { margin: 0; font-size: 14px; color: var(--text-muted); text-transform: uppercase; }
-    .stat-card .value { font-size: 32px; font-weight: 700; margin: 10px 0; color: var(--text-main); }
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-card h4 { margin: 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+    .stat-card .value { font-size: 30px; font-weight: 800; margin: 8px 0; color: var(--text-main); }
     .stat-card .sub-text { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 15px; display: inline-block; }
     .card-total { border-bottom: 4px solid var(--primary); }
     .card-active { border-bottom: 4px solid var(--active-color); }
     .card-passive { border-bottom: 4px solid var(--passive-color); }
-    .chart-box { padding: 20px; border: 1px solid var(--border-color); border-radius: 15px; background: #fff; margin-bottom: 20px; height: 300px; display: flex; justify-content: center; align-items: center; box-shadow: var(--shadow-sm); }
+    .chart-box {
+      padding: 18px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: #fff;
+      margin-bottom: 20px;
+      min-height: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      width: 100%;
+      overflow: hidden;
+    }
 
-    /* ================= FORMS & BUTTONS ================= */
-    .form-group { margin-bottom: 18px; text-align: left; }
-    label { font-weight: 600; color: #4a5568; display: block; margin-bottom: 8px; font-size: 14px; }
-    input, select { width: 100%; padding: 14px; border-radius: 10px; border: 1.5px solid var(--border-color); font-size: 15px; font-family: 'Poppins', sans-serif; box-sizing: border-box; transition: all 0.3s; background-color: #f8fafc; color: var(--text-main); }
-    input:focus, select:focus { border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 4px rgba(0, 121, 107, 0.1); outline: none; }
+    /* ================= FORMS & INPUTS ================= */
+    .form-group { margin-bottom: 16px; text-align: left; }
+    label { font-weight: 600; color: #4a5568; display: block; margin-bottom: 6px; font-size: 13.5px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      font-size: 14.5px;
+      font-family: inherit;
+      box-sizing: border-box;
+      transition: all 0.25s;
+      background-color: #f8fafc;
+      color: var(--text-main);
+      min-height: 44px;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      background-color: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.12);
+      outline: none;
+    }
     .bundle-input { background: #fff5f5 !important; color: #e53e3e !important; font-weight: bold; border-color: #fed7d7 !important; }
     .tot-input { background: #edf2f7 !important; color: #2b6cb0 !important; font-weight: bold; }
 
-    .entry-section { border: 1.5px solid var(--border-color); padding: 25px; border-radius: var(--radius); margin-bottom: 25px; background: #fafafa; transition: box-shadow 0.3s; }
+    .entry-section {
+      border: 1.5px solid var(--border-color);
+      padding: 22px;
+      border-radius: var(--radius);
+      margin-bottom: 22px;
+      background: #fafafa;
+      transition: box-shadow 0.25s;
+    }
     .entry-section:hover { box-shadow: var(--shadow-md); border-color: #cbd5e0; }
-    .info-box { background: var(--primary-light); padding: 10px 15px; border-radius: 8px; font-size: 13px; margin-top: 8px; border-left: 4px solid var(--primary); font-weight: 500; color: var(--primary-dark); }
-    .village-entry { background: #fff; border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; margin-top: 15px; box-shadow: var(--shadow-sm); }
-    .val-msg { color: #e53e3e; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; background: #fff5f5; padding: 8px; border-radius: 6px; }
+    .info-box {
+      background: var(--primary-light);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 8px;
+      border-left: 4px solid var(--primary);
+      font-weight: 500;
+      color: var(--primary-dark);
+    }
+    .village-entry {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .val-msg {
+      color: #e53e3e;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 10px;
+      text-align: center;
+      background: #fff5f5;
+      padding: 8px;
+      border-radius: 6px;
+    }
 
-    .submit-btn { background: var(--primary); color: white; padding: 16px; width: 100%; border: none; border-radius: 30px; font-size: 18px; cursor: pointer; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,121,107,0.3); }
-    .submit-btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,121,107,0.4); }
-    .report-btn { color: white; padding: 14px; width: 100%; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 600; margin-top: 15px; transition: all 0.3s; }
-    .report-btn:hover { transform: translateY(-2px); filter: brightness(0.9); }
-    .add-btn { width: 100%; padding: 14px; margin-bottom: 20px; border-radius: 10px; border: 2px dashed var(--primary); background: rgba(0,121,107,0.02); color: var(--primary); font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 15px; }
+    .submit-btn {
+      background: var(--primary);
+      color: white;
+      padding: 14px 22px;
+      width: 100%;
+      border: none;
+      border-radius: 26px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.25s;
+      box-shadow: 0 4px 10px rgba(0,121,107,0.25);
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .submit-btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,121,107,0.35); }
+    .submit-btn:active { transform: translateY(0); }
+    .report-btn {
+      color: white;
+      padding: 12px 18px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      font-size: 14.5px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 12px;
+      transition: all 0.2s;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .report-btn:hover { transform: translateY(-1px); filter: brightness(0.92); }
+    .add-btn {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 18px;
+      border-radius: 8px;
+      border: 2px dashed var(--primary);
+      background: rgba(0,121,107,0.03);
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 14.5px;
+      min-height: 44px;
+    }
     .add-btn:hover { background: rgba(0,121,107,0.08); }
-    .back-btn { background: #e2e8f0; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; color: #4a5568; transition: 0.3s; }
+    .back-btn {
+      background: #e2e8f0;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #4a5568;
+      transition: 0.2s;
+      min-height: 40px;
+    }
     .back-btn:hover { background: #cbd5e0; color: #1a202c; }
 
     /* ================= REPORT MENU ================= */
-    .report-menu-item { background: #fff; border: 1.5px solid var(--border-color); padding: 15px 20px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; cursor: pointer; transition: all 0.3s; box-shadow: var(--shadow-sm); }
-    .report-menu-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-    .rm-icon { font-size: 28px; margin-right: 15px; background: #f8fafc; padding: 10px; border-radius: 10px; }
+    .report-menu-item {
+      background: #fff;
+      border: 1.5px solid var(--border-color);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: var(--shadow-sm);
+    }
+    .report-menu-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .rm-icon { font-size: 26px; margin-right: 14px; background: #f8fafc; padding: 8px; border-radius: 8px; flex-shrink: 0; }
     .rm-details { flex-grow: 1; }
-    .rm-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 3px; display: block; }
-    .rm-desc { font-size: 13px; color: var(--text-muted); display: block; }
-    .report-card { display: none; animation: fadeIn 0.4s ease; background: #fff; border: 1px solid var(--border-color); padding: 25px; border-radius: var(--radius); margin-bottom: 25px; box-shadow: var(--shadow-sm); }
+    .rm-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; display: block; }
+    .rm-desc { font-size: 12.5px; color: var(--text-muted); display: block; }
+    .report-card { display: none; animation: fadeIn 0.35s ease; background: #fff; border: 1px solid var(--border-color); padding: 22px; border-radius: var(--radius); margin-bottom: 22px; box-shadow: var(--shadow-sm); }
     
-    .checkbox-list { background: #fff5f5; border: 1px solid #fed7d7; padding: 15px; border-radius: 10px; max-height: 220px; overflow-y: auto; margin-bottom: 15px; display: none; }
-    .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-weight: 500; color: #742a2a; font-size: 14px; border-bottom: 1px dashed #fed7d7; }
-    .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; }
-    .checkbox-header { border-bottom: 2px solid #feb2b2; padding-bottom: 10px; margin-bottom: 10px; font-weight: 700; color: #9b2c2c; }
+    .checkbox-list { background: #fff5f5; border: 1px solid #fed7d7; padding: 14px; border-radius: 8px; max-height: 220px; overflow-y: auto; margin-bottom: 14px; display: none; }
+    .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-weight: 500; color: #742a2a; font-size: 13.5px; border-bottom: 1px dashed #fed7d7; }
+    .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; min-height: 18px; }
+    .checkbox-header { border-bottom: 2px solid #feb2b2; padding-bottom: 8px; margin-bottom: 8px; font-weight: 700; color: #9b2c2c; }
 
     /* ================= DOWNLOADS, GALLERY & LINKS ================= */
-    .dl-list { display: flex; flex-direction: column; gap: 12px; }
-    .dl-item { background: #fff; border: 1px solid var(--border-color); padding: 18px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: var(--text-main); font-weight: 600; transition: all 0.2s; box-shadow: var(--shadow-sm); cursor: pointer; }
-    .dl-item:hover { border-color: var(--primary); transform: translateX(5px); box-shadow: var(--shadow-md); color: var(--primary); }
+    .dl-list { display: flex; flex-direction: column; gap: 10px; }
+    .dl-item {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 14px 18px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 600;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      min-height: 48px;
+    }
+    .dl-item:hover { border-color: var(--primary); transform: translateX(3px); box-shadow: var(--shadow-md); color: var(--primary); }
     .folder-item { background: linear-gradient(to right, #fffde7, #fff9c4); border-color: #fbc02d; color: #f57f17; }
-    .folder-item:hover { border-color: #f57f17; transform: scale(1.02); }
+    .folder-item:hover { border-color: #f57f17; }
 
-    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; margin-top: 20px; }
-    .photo-card { background: #fff; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; transition: all 0.3s; }
-    .photo-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
-    .photo-card img { width: 100%; height: 140px; object-fit: cover; border-bottom: 1px solid #edf2f7; display: block; cursor: pointer; transition: opacity 0.3s; }
-    .photo-card img:hover { opacity: 0.85; }
-    .photo-caption { padding: 12px; text-align: left; background: #fff; flex-grow: 1; word-wrap: break-word; white-space: normal; }
-    .photo-title { color: var(--primary-dark); font-weight: 600; font-size: 14px; margin-bottom: 4px; display: block; }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .photo-card { background: #fff; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; transition: all 0.25s; }
+    .photo-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .photo-card img { width: 100%; height: 135px; object-fit: cover; border-bottom: 1px solid #edf2f7; display: block; cursor: pointer; transition: opacity 0.2s; }
+    .photo-card img:hover { opacity: 0.88; }
+    .photo-caption { padding: 10px; text-align: left; background: #fff; flex-grow: 1; word-wrap: break-word; white-space: normal; }
+    .photo-title { color: var(--primary-dark); font-weight: 600; font-size: 13.5px; margin-bottom: 3px; display: block; }
     
-    .photo-folder-card { background: linear-gradient(145deg, #fff9c4, #fff176); border: 1px solid #fbc02d; border-radius: 12px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; padding: 30px 15px; transition: 0.3s; text-align: center; }
-    .photo-folder-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+    .photo-folder-card {
+      background: linear-gradient(145deg, #fff9c4, #fff176);
+      border: 1px solid #fbc02d;
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      padding: 24px 14px;
+      transition: 0.25s;
+      text-align: center;
+    }
+    .photo-folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
-    .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(15, 23, 42, 0.95); backdrop-filter: blur(5px); }
+    .modal { display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(15, 23, 42, 0.92); backdrop-filter: blur(5px); }
     .modal-content { margin: auto; display: block; max-width: 90%; max-height: 75vh; margin-top: 40px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); object-fit: contain; }
-    .modal-caption { margin: auto; display: block; width: 90%; max-width: 800px; text-align: center; color: #fff; padding: 20px 0; font-size: 16px; line-height: 1.6; }
-    .close-btn { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 45px; font-weight: 300; transition: 0.3s; cursor: pointer; line-height: 1; z-index: 10000; }
+    .modal-caption { margin: auto; display: block; width: 90%; max-width: 800px; text-align: center; color: #fff; padding: 18px 0; font-size: 15px; line-height: 1.5; }
+    .close-btn { position: absolute; top: 16px; right: 24px; color: #fff; font-size: 40px; font-weight: 300; transition: 0.2s; cursor: pointer; line-height: 1; z-index: 10000; }
     .close-btn:hover { color: #f56565; transform: scale(1.1); }
 
-    /* ================= EXT INTRO BANNER (DATA ENTRY) ================= */
-    .ext-link-banner { background: linear-gradient(135deg, #ebf8ff, #bee3f8); border: 1px solid #90cdf4; padding: 18px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); }
-    .ext-link-banner:hover { box-shadow: var(--shadow-md); }
-    .ext-btn { background: #3182ce; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px rgba(49,130,206,0.3); transition: 0.3s; white-space: nowrap; }
-    .ext-btn:hover { background: #2b6cb0; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(49,130,206,0.4); color: white; }
+    /* ================= EXT INTRO BANNER ================= */
+    .ext-link-banner {
+      background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+      border: 1px solid #90cdf4;
+      padding: 16px 18px;
+      border-radius: 10px;
+      margin-bottom: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .ext-btn {
+      background: #3182ce;
+      color: white;
+      padding: 9px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13.5px;
+      box-shadow: 0 4px 6px rgba(49,130,206,0.25);
+      transition: 0.2s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 40px;
+    }
+    .ext-btn:hover { background: #2b6cb0; transform: translateY(-1px); color: white; }
 
-    /* ================= DATA TABLES & GOOGLE SHEET SYNC ================= */
-    .sheet-card { background: linear-gradient(135deg, #f0fff4, #e6fffa); border: 1.5px solid #38a169; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
-    .sheet-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-    .sheet-title { font-size: 16px; font-weight: 700; color: #22543d; display: flex; align-items: center; gap: 8px; }
+    /* ================= DATA TABLES & SHEET SYNC ================= */
+    .sheet-card {
+      background: linear-gradient(135deg, #f0fff4, #e6fffa);
+      border: 1.5px solid #38a169;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .sheet-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .sheet-title { font-size: 15.5px; font-weight: 700; color: #22543d; display: flex; align-items: center; gap: 8px; }
     .sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .sheet-btn { background: #38a169; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.2s; }
+    .sheet-btn {
+      background: #38a169;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+      min-height: 38px;
+    }
     .sheet-btn:hover { background: #2f855a; color: white; transform: translateY(-1px); }
     .sheet-btn-secondary { background: #edf2f7; color: #2d3748; border: 1px solid #cbd5e0; }
     .sheet-btn-secondary:hover { background: #e2e8f0; color: #1a202c; }
-    .sheet-meta { font-size: 12px; color: #4a5568; display: flex; flex-wrap: wrap; gap: 15px; border-top: 1px dashed #cbd5e0; padding-top: 10px; align-items: center; }
+    .sheet-meta {
+      font-size: 12px;
+      color: #4a5568;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-top: 1px dashed #cbd5e0;
+      padding-top: 8px;
+      align-items: center;
+    }
     .sheet-badge { background: #c6f6d5; color: #22543d; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
-    .table-subtabs { display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); margin-bottom: 15px; overflow-x: auto; padding-bottom: 2px; }
-    .subtab-btn { background: none; border: none; padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.2s; }
+    
+    .table-subtabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 14px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .subtab-btn {
+      background: none;
+      border: none;
+      padding: 9px 15px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      min-height: 42px;
+    }
     .subtab-btn:hover { color: var(--primary); }
     .subtab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: rgba(0, 121, 107, 0.05); border-radius: 6px 6px 0 0; }
-    .filter-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; background: #fff; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; }
-    .filter-inputs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex-grow: 1; }
-    .filter-search { min-width: 220px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; }
-    .filter-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white; }
-    .filter-stats { font-size: 13px; font-weight: 600; color: var(--primary-dark); background: var(--primary-light); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
-    .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; box-shadow: var(--shadow-sm); max-height: 520px; }
+    
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      background: #fff;
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+    .filter-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-grow: 1; }
+    .filter-search { min-width: 200px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; min-height: 38px; }
+    .filter-select { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: white; min-height: 38px; }
+    .filter-stats { font-size: 12.5px; font-weight: 600; color: var(--primary-dark); background: var(--primary-light); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+    
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      max-height: 540px;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+    .table-scroll-hint {
+      display: none;
+      background: #ebf8ff;
+      color: #2b6cb0;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      text-align: center;
+      border-bottom: 1px solid #bee3f8;
+    }
     .app-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    .app-table th { position: sticky; top: 0; background: #edf2f7; color: #2d3748; font-weight: 600; padding: 11px 14px; border-bottom: 2px solid #cbd5e0; white-space: nowrap; text-align: center; z-index: 1; }
-    .app-table td { padding: 10px 14px; border-bottom: 1px solid #edf2f7; text-align: center; color: var(--text-main); }
+    .app-table th {
+      position: sticky;
+      top: 0;
+      background: #edf2f7;
+      color: #2d3748;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-bottom: 2px solid #cbd5e0;
+      white-space: nowrap;
+      text-align: center;
+      z-index: 2;
+    }
+    .app-table td { padding: 9px 12px; border-bottom: 1px solid #edf2f7; text-align: center; color: var(--text-main); }
     .app-table tbody tr:hover { background: #f7fafc; }
     .app-table .text-left { text-align: left !important; }
-    .badge-bundle { background: #ebf8ff; color: #2b6cb0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .badge-bundle { background: #ebf8ff; color: #2b6cb0; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 11.5px; }
     .del-btn { background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
     .del-btn:hover { background: #fff5f5; }
-    .sheet-modal { display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
-    .sheet-modal-body { background: #fff; border-radius: 12px; max-width: 550px; width: 90%; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    /* ================= MODALS RESPONSIVENESS ================= */
+    .sheet-modal {
+      display: none;
+      position: fixed;
+      z-index: 99999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .sheet-modal-body {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      margin: auto;
+    }
 
     /* ================= MONTHLY INDICATORS DATA ENTRY ================= */
     .indicator-input-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      padding: 16px 18px;
+      padding: 14px 16px;
       box-shadow: var(--shadow-sm);
       transition: all 0.2s ease;
     }
@@ -272,22 +858,23 @@
     }
     .indicator-card-title {
       font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 12px;
+      font-size: 13.5px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .indicator-input {
       width: 100%;
-      padding: 9px 12px;
+      padding: 8px 12px;
       border: 1.5px solid var(--border-color);
       border-radius: 6px;
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 600;
       color: var(--text-main);
       box-sizing: border-box;
       transition: border-color 0.2s;
+      min-height: 40px;
     }
     .indicator-input:focus {
       outline: none;
@@ -295,27 +882,27 @@
       box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.15);
     }
     .indicator-hint {
-      font-size: 12px;
+      font-size: 11.5px;
       color: #718096;
       background: #f7fafc;
-      padding: 6px 10px;
+      padding: 5px 8px;
       border-radius: 4px;
       border-left: 3px solid #cbd5e0;
-      margin-top: 6px;
+      margin-top: 5px;
     }
 
     /* ================= MASTER MANAGEMENT STYLES ================= */
     .master-kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
     }
     .master-kpi-card {
       background: #fff;
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px 18px;
+      border-radius: 10px;
+      padding: 14px 16px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
@@ -327,7 +914,7 @@
       box-shadow: var(--shadow-md);
     }
     .master-kpi-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
@@ -335,7 +922,7 @@
       margin-bottom: 4px;
     }
     .master-kpi-value {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 800;
       color: var(--primary-dark);
       line-height: 1.1;
@@ -347,7 +934,7 @@
     }
     .desig-badge {
       display: inline-block;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 4px;
       font-size: 11px;
       font-weight: 700;
@@ -362,7 +949,7 @@
       background: #f7fafc;
       color: #2d3748;
       border: 1px solid #e2e8f0;
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
       font-size: 11px;
       font-weight: 500;
@@ -382,6 +969,7 @@
       gap: 4px;
       white-space: nowrap;
       text-decoration: none;
+      min-height: 32px;
     }
     .act-btn-transfer, .btn-transfer { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
     .act-btn-transfer:hover, .btn-transfer:hover { background: #3182ce; color: white; }
@@ -394,12 +982,12 @@
     .chips-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       max-height: 180px;
       overflow-y: auto;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      padding: 10px;
+      padding: 8px;
       border-radius: 8px;
     }
     .village-checkbox-chip {
@@ -407,10 +995,10 @@
       align-items: center;
       gap: 6px;
       background: #fff;
-      padding: 5px 10px;
+      padding: 5px 9px;
       border-radius: 6px;
       border: 1px solid #cbd5e0;
-      font-size: 13px;
+      font-size: 12.5px;
       cursor: pointer;
       user-select: none;
       transition: all 0.15s;
@@ -423,46 +1011,333 @@
       font-weight: 700;
       color: #2b6cb0;
     }
-    .village-checkbox-chip.active {
+
+    /* Upload Component & Date Validation Styles */
+    .upload-dropzone {
+      border: 2px dashed #90cdf4;
       background: #ebf8ff;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+    .upload-dropzone:hover, .upload-dropzone.dragover {
       border-color: #3182ce;
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+    .upload-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .upload-kpi-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .upload-kpi-card .kpi-num {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .upload-kpi-card .kpi-label {
+      font-size: 11.5px;
+      color: #718096;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .val-badge-valid {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #def7ec;
+      color: #03543f;
+      border: 1px solid #bcf0da;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .val-badge-norm {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fef08a;
+      color: #854d0e;
+      border: 1px solid #fde047;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .val-badge-invalid {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fde8e8;
+      color: #9b1c1c;
+      border: 1px solid #f8b4b4;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .dataset-selector-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid #cbd5e0;
+      background: #ffffff;
+      color: #4a5568;
+      transition: all 0.15s ease;
+    }
+    .dataset-selector-pill:hover {
+      border-color: #3182ce;
+      color: #2b6cb0;
+      background: #f7fafc;
+    }
+    .dataset-selector-pill.active {
+      background: #2b6cb0;
+      color: #ffffff;
+      border-color: #2b6cb0;
+      box-shadow: 0 2px 5px rgba(43,108,176,0.3);
     }
 
-    /* ================= RESPONSIVE ================= */
-    @media (max-width: 768px) {
-      .dashboard-wrapper { flex-direction: column; gap: 15px; }
-      .main-content { padding: 20px 15px; border-radius: 12px; }
-      .app-header { font-size: 18px; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
-      .sidebar.tab-nav { width: 100%; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding: 10px; position: static; box-shadow: none; border: 1px solid var(--border-color); }
-      .sidebar-title { display: none; }
-      .tab-btn { width: auto; padding: 10px 15px; margin-bottom: 0; margin-right: 8px; border-left: none; border-bottom: 3px solid transparent; border-radius: 8px; white-space: nowrap; }
-      .tab-btn.active { border-left: none; border-bottom: 3px solid var(--primary); }
-      .entry-section { padding: 15px; }
-      .ext-link-banner { flex-direction: column; text-align: center; gap: 15px; }
+    /* ================= RESPONSIVE BREAKPOINTS (Mobile, Tablet, PC) ================= */
+    
+    /* TABLET (768px - 1024px) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      body { padding: 14px 10px; }
+      .dashboard-wrapper { gap: 16px; }
+      .sidebar.tab-nav { width: 220px; min-width: 200px; padding: 14px 10px; }
+      .tab-btn { font-size: 13.5px; padding: 10px 12px; }
+      .main-content { padding: 20px 18px; }
+      .master-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .stats-container { grid-template-columns: repeat(3, 1fr); }
+      .table-scroll-hint { display: block; }
+    }
+
+    /* MOBILE (< 768px) */
+    @media (max-width: 767px) {
+      body {
+        padding: 0 0 calc(var(--bottom-nav-height) + 18px) 0;
+        background-color: #f7fafc;
+      }
+      .app-header { display: none; }
+      .mobile-appbar { display: flex; }
+      .mobile-bottom-nav { display: flex; }
+
+      .dashboard-wrapper {
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 10px;
+      }
+      
+      /* Hide desktop sidebar on mobile, use drawer and bottom bar */
+      .sidebar.tab-nav { display: none; }
+
+      .main-content {
+        padding: 16px 12px;
+        border-radius: 10px;
+        box-shadow: var(--shadow-sm);
+        min-height: 450px;
+        border: none;
+      }
+
+      /* Single / 2-column stats cards */
+      .stats-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .stat-card { padding: 12px 10px; }
+      .stat-card .value { font-size: 22px; margin: 4px 0; }
+      .stat-card h4 { font-size: 11px; }
+
+      .master-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .master-kpi-card { padding: 10px 12px; }
+      .master-kpi-value { font-size: 20px; }
+      .master-kpi-title { font-size: 10.5px; }
+
+      /* Inputs - set 16px on mobile to prevent iOS zoom */
+      input, select, textarea {
+        font-size: 16px !important;
+        padding: 10px 12px;
+        border-radius: 8px;
+      }
+
+      .entry-section { padding: 14px 12px; margin-bottom: 16px; }
+      .ext-link-banner { flex-direction: column; text-align: center; gap: 12px; padding: 14px; }
+      
+      .table-subtabs {
+        gap: 4px;
+        margin-bottom: 12px;
+      }
+      .subtab-btn {
+        padding: 8px 12px;
+        font-size: 12.5px;
+      }
+
+      .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px;
+      }
+      .filter-inputs { flex-direction: column; width: 100%; gap: 6px; }
+      .filter-search, .filter-select { width: 100%; min-width: 100%; }
+
+      .table-scroll-hint { display: block; }
+      .app-table th, .app-table td { padding: 8px 10px; font-size: 12px; }
+
+      .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .photo-card img { height: 110px; }
+
+      .sheet-card { padding: 12px; }
+      .sheet-actions { width: 100%; justify-content: stretch; }
+      .sheet-btn { flex: 1; justify-content: center; font-size: 12px; }
+
+      .sheet-modal { padding: 8px; }
+      .sheet-modal-body {
+        padding: 16px 14px;
+        border-radius: 10px;
+        max-height: 94vh;
+      }
+
+      .chart-box { min-height: 240px; padding: 10px; }
+
+      .app-footer { margin: 20px auto 0 auto; font-size: 12px; padding: 14px 10px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- MOBILE TOP APP BAR -->
+  <div class="mobile-appbar" id="mobileAppbar">
+    <div class="mobile-appbar-left">
+      <button type="button" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="मेनू उघडा">☰</button>
+      <div>
+        <div class="mobile-appbar-title">🏥 प्रा.आ. केंद्र, भादा</div>
+        <div class="mobile-appbar-sub" id="mobileCurrentTabLabel">📊 डॅशबोर्ड</div>
+      </div>
+    </div>
+    <div>
+      <span class="header-chip" style="font-size:11px; padding:3px 8px;" id="mobileSyncStatusChip">🟢 ऑनलाइन</span>
+    </div>
+  </div>
+
+  <!-- MOBILE SLIDE-OUT DRAWER OVERLAY -->
+  <div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="closeMobileDrawer()"></div>
+
+  <!-- MOBILE SLIDE-OUT DRAWER -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+      <div>
+        <div style="font-weight:800; font-size:16px;">🏥 प्रा.आ. केंद्र, भादा</div>
+        <div style="font-size:11.5px; opacity:0.9;">NVBDCP सिस्टीम मेनू</div>
+      </div>
+      <button type="button" class="mobile-drawer-close" onclick="closeMobileDrawer()">✕</button>
+    </div>
+    <div class="mobile-drawer-nav">
+      <button type="button" class="mobile-drawer-btn active" data-tab="dashboardTab" onclick="handleDrawerNav('dashboardTab')">📊 डॅशबोर्ड</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="dataEntry" onclick="handleDrawerNav('dataEntry')">📝 डेटा एन्ट्री (Daily & Monthly)</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="masterTab" onclick="handleDrawerNav('masterTab')">🏛️ मास्टर व्यवस्थापन (Masters)</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="uploadTab" onclick="handleDrawerNav('uploadTab')">📤 डेटा अपलोड व प्रमाणीकरण (CSV Upload)</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="tablesTab" onclick="handleDrawerNav('tablesTab')">📋 डेटा तक्ते (Tables)</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="reportTab" onclick="handleDrawerNav('reportTab')">📑 अहवाल व नोटीस (Reports)</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="downloadTab" onclick="handleDrawerNav('downloadTab')">📥 डाऊनलोड्स व नमुने</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="photoTab" onclick="handleDrawerNav('photoTab')">🖼️ फोटो गॅलरी</button>
+      <button type="button" class="mobile-drawer-btn" data-tab="linksTab" onclick="handleDrawerNav('linksTab')">🔗 महत्त्वाच्या लिंक्स</button>
+      <div style="border-top:1px solid #e2e8f0; margin:10px 0; padding-top:10px;">
+        <button type="button" class="sheet-btn" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="closeMobileDrawer(); openSheetSettingsModal();">
+          ⚙️ गुगल शीट सेटिंग्ज
+        </button>
+        <button type="button" class="sheet-btn" style="width:100%; justify-content:center; background:#2b6cb0;" onclick="closeMobileDrawer(); openUniversalUploadModal('bsData');">
+          📤 डेटा अपलोड (Excel/CSV)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+    <button type="button" class="bottom-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab')">
+      <span class="bottom-nav-icon">📊</span>
+      <span class="bottom-nav-label">डॅशबोर्ड</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-tab="dataEntry" onclick="switchTab('dataEntry')">
+      <span class="bottom-nav-icon">📝</span>
+      <span class="bottom-nav-label">एन्ट्री</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-tab="masterTab" onclick="switchTab('masterTab')">
+      <span class="bottom-nav-icon">🏛️</span>
+      <span class="bottom-nav-label">मास्टर</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-tab="tablesTab" onclick="switchTab('tablesTab')">
+      <span class="bottom-nav-icon">📋</span>
+      <span class="bottom-nav-label">तक्ते</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-tab="reportTab" onclick="switchTab('reportTab')">
+      <span class="bottom-nav-icon">📑</span>
+      <span class="bottom-nav-label">अहवाल</span>
+    </button>
+    <button type="button" class="bottom-nav-item" onclick="toggleMobileDrawer()">
+      <span class="bottom-nav-icon">☰</span>
+      <span class="bottom-nav-label">अधिक</span>
+    </button>
+  </nav>
+
+  <!-- DESKTOP / TABLET APP HEADER -->
   <div class="app-header">
-    <div style="font-size: 24px; margin-bottom: 8px;">🏥 प्राथमिक आरोग्य केंद्र, भादा</div>
-    <div style="font-size: 16px; font-weight: 500; opacity: 0.9; letter-spacing: 0.5px; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 8px; display: inline-block;">
-      राष्ट्रीय कीटकजन्य रोग नियंत्रण कार्यक्रम मॅनेजमेंट सिस्टीम
+    <div class="header-content">
+      <div class="header-title-box">
+        <div class="header-title">🏥 प्राथमिक आरोग्य केंद्र, भादा</div>
+        <div class="header-sub">राष्ट्रीय कीटकजन्य रोग नियंत्रण कार्यक्रम मॅनेजमेंट सिस्टीम</div>
+      </div>
+      <div class="header-badges">
+        <span class="header-chip">🏛️ ६ उपकेंद्रे | ३७ गावे</span>
+        <span class="header-chip">👥 ६५ कर्मचारी</span>
+        <span class="header-chip" style="background:#38a169;">🟢 Google Sheet सिंक</span>
+      </div>
     </div>
   </div>
 
   <div class="dashboard-wrapper">
-    <div class="sidebar tab-nav">
-      <div class="sidebar-title">मुख्य मेनू</div>
-      <button class="tab-btn active" id="sideBtnDashboard" onclick="switchTab('dashboardTab', this)">📊 डॅशबोर्ड</button>
-      <button class="tab-btn" id="sideBtnMonthlyReportDash" onclick="openMonthlyReportDashboardDirect(this)">📑 मासिक अहवाल डॅशबोर्ड</button>
-      <button class="tab-btn" onclick="switchTab('dataEntry', this)">📝 डेटा एन्ट्री</button>
-      <button class="tab-btn" onclick="switchTab('masterTab', this)">🏛️ मास्टर व्यवस्थापन (Masters)</button>
-      <button class="tab-btn" onclick="switchTab('tablesTab', this)">📋 डेटा तक्ते (Tables)</button>
-      <button class="tab-btn" onclick="switchTab('reportTab', this)">📑 अहवाल</button>
-      <button class="tab-btn" onclick="switchTab('downloadTab', this)">📥 डाऊनलोड्स</button>
-      <button class="tab-btn" onclick="switchTab('photoTab', this)">🖼️ गॅलरी</button>
-      <button class="tab-btn" onclick="switchTab('linksTab', this)">🔗 महत्त्वाच्या लिंक्स</button>
+    <!-- DESKTOP SIDEBAR -->
+    <div class="sidebar tab-nav" id="desktopSidebar">
+      <div class="sidebar-title">
+        <span>मुख्य मेनू</span>
+        <span style="font-size:11px; background:#edf2f7; color:#4a5568; padding:2px 6px; border-radius:4px;">PHC Bhada</span>
+      </div>
+      <button class="tab-btn active" id="sideBtnDashboard" data-tab="dashboardTab" onclick="switchTab('dashboardTab', this)">📊 डॅशबोर्ड</button>
+      <button class="tab-btn" id="sideBtnMonthlyReportDash" data-tab="monthlyReportDash" onclick="openMonthlyReportDashboardDirect(this)">📑 मासिक अहवाल डॅशबोर्ड</button>
+      <button class="tab-btn" data-tab="dataEntry" onclick="switchTab('dataEntry', this)">📝 डेटा एन्ट्री (Daily/Monthly)</button>
+      <button class="tab-btn" data-tab="masterTab" onclick="switchTab('masterTab', this)">🏛️ मास्टर व्यवस्थापन (Masters)</button>
+      <button class="tab-btn" data-tab="uploadTab" id="sideBtnUpload" onclick="switchTab('uploadTab', this)">📤 डेटा अपलोड (CSV Upload)</button>
+      <button class="tab-btn" data-tab="tablesTab" onclick="switchTab('tablesTab', this)">📋 डेटा तक्ते (Tables)</button>
+      <button class="tab-btn" data-tab="reportTab" onclick="switchTab('reportTab', this)">📑 अहवाल व नोटीस (Reports)</button>
+      <button class="tab-btn" data-tab="downloadTab" onclick="switchTab('downloadTab', this)">📥 डाऊनलोड्स व नमुने</button>
+      <button class="tab-btn" data-tab="photoTab" onclick="switchTab('photoTab', this)">🖼️ फोटो गॅलरी</button>
+      <button class="tab-btn" data-tab="linksTab" onclick="switchTab('linksTab', this)">🔗 महत्त्वाच्या लिंक्स</button>
     </div>
 
     <div class="main-content">
@@ -473,6 +1348,9 @@
         <div class="table-subtabs" style="margin-bottom:18px;">
           <button id="dashSubtabBtnMonthly" class="subtab-btn active" onclick="switchDashboardSubtab('monthlyReport')">
             📑 मासिक अहवाल डॅशबोर्ड (NVBDCP Indicators & Template Report)
+          </button>
+          <button id="dashSubtabBtnVillageAnalytics" class="subtab-btn" onclick="switchDashboardSubtab('villageAnalytics')">
+            📈 गावनिहाय कर्मचारी विश्लेषण (Recharts Analytics)
           </button>
           <button id="dashSubtabBtnGeneral" class="subtab-btn" onclick="switchDashboardSubtab('general')">
             📊 रक्त नमुने विश्लेषण व आलेख (Blood Smear Overview & Graphs)
@@ -812,6 +1690,35 @@
           </div>
         </div>
 
+        <!-- ================= SUBPANE 3: VILLAGE & EMPLOYEE RECHARTS ANALYTICS ================= -->
+        <div id="subpaneVillageAnalytics" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:2px solid var(--border-color); padding-bottom:12px;">
+            <div>
+              <h3 style="color:var(--primary-dark); margin:0; display:flex; align-items:center; gap:8px;">
+                <span>📈</span> गावनिहाय व कर्मचारीनिहाय डेटा वितरण विश्लेषण (Recharts Analytics)
+              </h3>
+              <p style="margin:4px 0 0 0; font-size:13px; color:#4a5568;">
+                प्राथमिक आरोग्य केंद्र भादा अंतर्गत ६५ कर्मचारी, ३० गावे आणि ८ उपकेंद्रांचे सर्वसमावेशक चार्ट विश्लेषण
+              </p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button type="button" onclick="refreshVillageAnalyticsData()" style="background:#319795; color:white; border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                🔄 रिफ्रेश करा
+              </button>
+              <button type="button" onclick="window.print()" style="background:#4a5568; color:white; border:none; border-radius:6px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                🖨️ आलेख प्रिंट करा
+              </button>
+            </div>
+          </div>
+
+          <div id="villageAnalyticsLoader" style="text-align:center; padding:60px 20px; color:var(--primary); font-weight:bold; font-size:16px;">
+            डेटा लोड होत आहे... ⏳
+          </div>
+
+          <!-- React Recharts App Mount Target -->
+          <div id="villageAnalyticsRoot" style="min-height:500px;"></div>
+        </div>
+
       </div>
 
       <div id="dataEntry" class="tab-pane">
@@ -1127,6 +2034,9 @@
             <button type="button" class="sheet-btn" style="background:#00796b;" onclick="openAddEmployeeModal()">
               ➕ नवीन कर्मचारी (Add Employee)
             </button>
+            <button type="button" class="sheet-btn" style="background:#4a5568;" onclick="openCsvImportModal()">
+              📥 Sheet / CSV इम्पोर्ट (Import Data)
+            </button>
             <button type="button" class="sheet-btn sheet-btn-secondary" onclick="loadMasterManagementData(true)">
               🔄 रिफ्रेश करा
             </button>
@@ -1370,7 +2280,13 @@
               <button class="sheet-btn" id="btnSyncGoogleSheet" onclick="syncDataToGoogleSheet(this)">
                 🔄 गुगल शीटमध्ये सिंक करा
               </button>
-              <a href="https://docs.google.com/spreadsheets/d/1QW9vQ943bT131102008741_b9e7cQ86z7pLzP9gX3e0r/edit" id="linkOpenGoogleSheet" target="_blank" class="sheet-btn" style="background:#2b6cb0;">
+              <button class="sheet-btn" style="background:#2b6cb0;" onclick="openUniversalUploadModal()">
+                📂 डेटा अपलोड व आयात केंद्र
+              </button>
+              <button class="sheet-btn" style="background:#6b46c1;" onclick="confirmResetInitialData()">
+                ⚡ २०२६ अधिकृत डेटा रीलोड
+              </button>
+              <a href="https://docs.google.com/spreadsheets/d/1QW9vQ943bT131102008741_b9e7cQ86z7pLzP9gX3e0r/edit" id="linkOpenGoogleSheet" target="_blank" class="sheet-btn sheet-btn-secondary" style="text-decoration:none;">
                 🌐 गुगल शीट उघडा ↗️
               </a>
               <button class="sheet-btn sheet-btn-secondary" onclick="openSheetSettingsModal()">
@@ -1381,9 +2297,15 @@
           <div class="sheet-meta">
             <div>📄 <b>Spreadsheet ID:</b> <span id="lblSpreadsheetId" style="font-family:monospace; background:#e2e8f0; padding:2px 6px; border-radius:4px;">1QW9vQ943bT131102008741_b9e7cQ86z7pLzP9gX3e0r</span></div>
             <div>🕒 <b>शेवटचे सिंक:</b> <span id="lblLastSyncTime">सिंक सज्ज</span></div>
-            <div>📥 <b>CSV डाऊनलोड:</b>
-              <a href="/api/export/bs-data.csv" download style="color:#2b6cb0; text-decoration:underline; font-weight:600; margin-right:8px;">रक्त नमुने (CSV)</a>
-              <a href="/api/export/village-details.csv" download style="color:#2f855a; text-decoration:underline; font-weight:600;">गावनिहाय (CSV)</a>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <b>📥 CSV डाऊनलोड:</b>
+              <a href="/api/export/bs-data.csv" download style="color:#2b6cb0; text-decoration:underline; font-weight:600;">🩸 BsDataEntry (रक्त नमुने)</a>
+              <span>•</span>
+              <a href="/api/export/village-details.csv" download style="color:#2f855a; text-decoration:underline; font-weight:600;">🏡 VillageDetails (गावनिहाय)</a>
+              <span>•</span>
+              <a href="/api/export/month-master.csv" download style="color:#805ad5; text-decoration:underline; font-weight:600;">📅 MonthMaster (गृहभेटी व निर्देशांक)</a>
+              <span>•</span>
+              <a href="/api/export/master-data.csv" download style="color:#c05621; text-decoration:underline; font-weight:600;">👥 MasterData (६५ कर्मचारी)</a>
             </div>
           </div>
         </div>
@@ -1482,11 +2404,16 @@
         <div id="monthSubtab" class="table-subpane" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
             <div style="font-weight:700; color:#234e52; font-size:14px; display:flex; align-items:center; gap:6px;">
-              <span>🗓️</span> मासिक अहवाल निर्देशांक मास्टर (Monthly NVBDCP Indicators Master)
+              <span>🗓️</span> <b>मासिक अहवाल, पंधरवडा व गृहभेटी मास्टर (MonthMaster)</b>
             </div>
-            <button class="sheet-btn" style="background:#00796b; padding:7px 15px; font-size:13px;" onclick="switchToMonthlyIndicatorsTab()">
-              ➕ नवीन डेटा भरा / संपादित करा
-            </button>
+            <div style="display:flex; gap:8px;">
+              <button class="sheet-btn" style="background:#2b6cb0; padding:7px 12px; font-size:13px;" onclick="openUniversalUploadModal('month')">
+                📂 MonthMaster CSV अपलोड
+              </button>
+              <button class="sheet-btn" style="background:#00796b; padding:7px 15px; font-size:13px;" onclick="switchToMonthlyIndicatorsTab()">
+                ➕ नवीन डेटा भरा / संपादित करा
+              </button>
+            </div>
           </div>
           <div class="table-container">
             <table class="app-table" id="monthTable">
@@ -1495,6 +2422,9 @@
                   <th>अ.क्र.</th>
                   <th>महिना</th>
                   <th>नवीन OPD (मा/प्र)</th>
+                  <th>MPW गृहभेटी (मा/प्र)</th>
+                  <th>ANM गृहभेटी (मा/प्र)</th>
+                  <th>आशा गृहभेटी (मा/प्र)</th>
                   <th>तापाचे रुग्ण (मा/प्र)</th>
                   <th>रक्त नमुणे (मा/प्र)</th>
                   <th>उपचारीत रुग्ण (मा/प्र)</th>
@@ -1504,7 +2434,7 @@
                 </tr>
               </thead>
               <tbody id="monthTableBody">
-                <tr><td colspan="9" style="text-align:center; padding:30px; color:#718096;">डेटा लोड होत आहे... ⏳</td></tr>
+                <tr><td colspan="12" style="text-align:center; padding:30px; color:#718096;">डेटा लोड होत आहे... ⏳</td></tr>
               </tbody>
             </table>
           </div>
@@ -1512,7 +2442,184 @@
 
       </div>
 
-    </div>
+      <!-- ================= CSV DATA UPLOAD & DATE VALIDATION COMPONENT ================= -->
+      <div id="uploadTab" class="tab-pane">
+        
+        <!-- Header Banner -->
+        <div style="background:linear-gradient(135deg, #ebf8ff 0%, #edf2f7 100%); border:1px solid #bee3f8; border-radius:12px; padding:20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+              <span style="font-size:26px;">📤</span>
+              <h2 style="margin:0; color:#2b6cb0; font-size:20px; font-weight:800;">डेटा अपलोड व दिनांक प्रमाणीकरण केंद्र (CSV Data Upload & State Store)</h2>
+            </div>
+            <p style="margin:0; color:#4a5568; font-size:13.5px; line-height:1.5;">
+              CSV फाईल किंवा गुगल शीटमधील डेटा थेट अपलोड करा. <b>'दिनांक'</b> कॉलमचे मूल्य <b><code style="background:#e2e8f0; padding:2px 6px; border-radius:4px; color:#2b6cb0;">dd-mm-yyyy</code></b> (उदा. <code>11-12-2025</code>, <code>27-10-2025</code>) फॉरमॅटमध्ये तपासून त्वरित स्टेट (State) मध्ये साठवले जाते.
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="sheet-btn" style="background:#2b6cb0; font-weight:700;" onclick="fillUploadCompSampleTemplate()">
+              📝 नमुना डेटा भरा (Sample)
+            </button>
+            <button class="sheet-btn sheet-btn-secondary" onclick="clearUploadCompTextarea()">
+              🧹 क्लिअर करा (Clear)
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Dataset Selector Pills -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px; font-weight:700; color:#2d3748; margin-bottom:8px; display:block;">
+            १. ज्या प्रकारचा डेटा अपलोड करायचा आहे तो निवडा (Select Dataset Type):
+          </label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="dataset-selector-pill active" id="pillDsBsData" onclick="selectUploadCompDataset('bsData')">
+              🩸 BsDataEntry (रक्त नमुने नोंद - १० स्तंभ)
+            </button>
+            <button type="button" class="dataset-selector-pill" id="pillDsVillage" onclick="selectUploadCompDataset('village')">
+              🏡 VillageDetails (गावनिहाय तपशील - ८ स्तंभ)
+            </button>
+            <button type="button" class="dataset-selector-pill" id="pillDsMonth" onclick="selectUploadCompDataset('month')">
+              📅 MonthMaster (मासिक निर्देशांक - १९ स्तंभ)
+            </button>
+            <button type="button" class="dataset-selector-pill" id="pillDsMaster" onclick="selectUploadCompDataset('master')">
+              👥 MasterData (६५ कर्मचारी व गावे - ५ स्तंभ)
+            </button>
+          </div>
+        </div>
+
+        <!-- Guidance Box -->
+        <div id="uploadCompGuideBox" style="background:#fffaf0; border-left:4px solid #dd6b20; border:1px solid #feebc8; border-radius:8px; padding:12px 16px; margin-bottom:18px; font-size:13px; color:#744210;">
+          <!-- dynamic guide injected via JS -->
+        </div>
+
+        <!-- 2. Drag & Drop and Upload Input Box -->
+        <div style="display:grid; grid-template-columns: 1fr; gap:14px; margin-bottom:18px;">
+          
+          <!-- Drag & Drop Zone -->
+          <div class="upload-dropzone" id="uploadCompDropzone" onclick="document.getElementById('uploadCompFileInput').click()">
+            <input type="file" id="uploadCompFileInput" accept=".csv, .txt" style="display:none;" onchange="handleUploadCompFileSelected(event)">
+            <div style="font-size:32px; margin-bottom:6px;">📁</div>
+            <div style="font-weight:700; color:#2b6cb0; font-size:15px;">CSV फाईल येथे ड्रॅग करून सोडा किंवा फाईल निवडण्यासाठी क्लिक करा</div>
+            <div style="font-size:12px; color:#718096; margin-top:4px;">(.csv किंवा .txt स्वरूप | UTF-8 एन्कोडिंग)</div>
+          </div>
+
+          <!-- Textarea Input Area -->
+          <div style="position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:12.5px; font-weight:700; color:#4a5568;">किंवा खाली थेट CSV मजकूर पेस्ट करा (Paste Raw CSV / Excel Data):</span>
+              <span id="uploadCompLineCountBadge" style="background:#edf2f7; color:#4a5568; font-size:11.5px; padding:2px 8px; border-radius:12px; font-weight:700;">० ओळी (Rows)</span>
+            </div>
+            <textarea id="uploadCompTextarea" rows="8" style="width:100%; font-family:Consolas, Monaco, monospace; font-size:12.5px; padding:12px; border:1.5px solid #cbd5e0; border-radius:8px; background:#fafafa; line-height:1.5; box-sizing:border-box;" placeholder="CSV मजकूर येथे पेस्ट करा..." oninput="onUploadCompInputChanged()"></textarea>
+          </div>
+
+          <!-- Upload Option Checkbox -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:#f7fafc; padding:10px 14px; border-radius:8px; border:1px solid #e2e8f0;">
+            <label id="uploadCompReplaceLabel" style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; user-select:none; margin:0;">
+              <input type="checkbox" id="uploadCompChkReplace" checked style="width:16px; height:16px;">
+              <span><b>आधीचा डेटा पूर्णपणे नवीन डेटाने बदला</b> (Replace existing dataset)</span>
+            </label>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="sheet-btn" style="background:#00796b; font-size:13px;" onclick="parseAndValidateUploadCompCsv()">
+                ⚡ त्वरित पार्स व प्रमाणीकरण करा (Parse & Validate)
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3. Validation KPI Summary -->
+        <div class="upload-kpi-grid">
+          <div class="upload-kpi-card" style="border-left:4px solid #3182ce;">
+            <div class="kpi-num" id="kpiUploadTotalRows" style="color:#2b6cb0;">०</div>
+            <div class="kpi-label">📊 एकूण पार्स केलेल्या ओळी (Total Rows)</div>
+          </div>
+          <div class="upload-kpi-card" style="border-left:4px solid #38a169;">
+            <div class="kpi-num" id="kpiUploadValidDates" style="color:#276749;">०</div>
+            <div class="kpi-label">🟢 वैध दिनांक (Valid dd-mm-yyyy)</div>
+          </div>
+          <div class="upload-kpi-card" style="border-left:4px solid #d69e2e;">
+            <div class="kpi-num" id="kpiUploadNormalizedDates" style="color:#b7791f;">०</div>
+            <div class="kpi-label">⚡ ऑटो-दुरुस्त (Auto-Normalized)</div>
+          </div>
+          <div class="upload-kpi-card" style="border-left:4px solid #e53e3e;">
+            <div class="kpi-num" id="kpiUploadInvalidDates" style="color:#c53030;">०</div>
+            <div class="kpi-label">❌ अवैध दिनांक / त्रुटी (Invalid Rows)</div>
+          </div>
+        </div>
+
+        <!-- Real-Time Status / Message Alert Box -->
+        <div id="uploadCompStatusMsg" style="display:none; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:600; font-size:13.5px;"></div>
+
+        <!-- 4. Parsed & Validated Records Preview Table -->
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">🔍</span>
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#2d3748;">डेटा व दिनांक प्रमाणीकरण पूर्वावलोकन (Parsed Records Preview)</h3>
+            </div>
+            
+            <!-- Filter Bar Inside Preview -->
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <div style="display:flex; border:1px solid #cbd5e0; border-radius:6px; overflow:hidden; font-size:12px;">
+                <button type="button" id="btnFilterAllRows" class="sheet-btn" style="border-radius:0; padding:5px 10px; font-size:12px; background:#2b6cb0; color:#fff;" onclick="filterUploadCompPreview('all')">सर्व ओळी (<span id="cntFilterAll">०</span>)</button>
+                <button type="button" id="btnFilterValidRows" class="sheet-btn sheet-btn-secondary" style="border-radius:0; padding:5px 10px; font-size:12px;" onclick="filterUploadCompPreview('valid')">केवळ वैध (<span id="cntFilterValid">०</span>)</button>
+                <button type="button" id="btnFilterErrorRows" class="sheet-btn sheet-btn-secondary" style="border-radius:0; padding:5px 10px; font-size:12px;" onclick="filterUploadCompPreview('errors')">केवळ त्रुटी (<span id="cntFilterErrors">०</span>)</button>
+              </div>
+              <input type="text" id="uploadCompSearchInput" placeholder="🔍 शोधा..." style="padding:5px 10px; font-size:12.5px; border:1px solid #cbd5e0; border-radius:6px; width:160px;" oninput="renderUploadCompPreviewTable()">
+            </div>
+          </div>
+
+          <!-- Preview Table Container -->
+          <div class="table-container" style="max-height:380px; overflow-y:auto;">
+            <table class="app-table" id="uploadCompPreviewTable">
+              <thead id="uploadCompPreviewThead">
+                <tr>
+                  <th>अ.क्र.</th>
+                  <th>नोंद ID</th>
+                  <th>दिनांक (CSV मध्ये)</th>
+                  <th>दिनांक प्रमाणीकरण स्थिती</th>
+                  <th>प्रमाणीकृत दिनांक (dd-mm-yyyy)</th>
+                  <th>उपकेंद्र</th>
+                  <th class="text-left">कर्मचारी नाव</th>
+                  <th>पद / कोड</th>
+                  <th>बंडल / तपशील</th>
+                  <th style="background:#e6fffa; color:#234e52;">एकूण नमुने</th>
+                </tr>
+              </thead>
+              <tbody id="uploadCompPreviewTbody">
+                <tr>
+                  <td colspan="10" style="text-align:center; padding:30px; color:#a0aec0;">
+                    पूर्वावलोकन पाहण्यासाठी वरील CSV मजकूर पेस्ट करा किंवा '📝 नमुना डेटा भरा' वर क्लिक करा.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 5. State Inspection & Commit Action Bar -->
+        <div style="background:#f7fafc; border:1.5px solid #cbd5e0; border-radius:10px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="font-weight:700; color:#2d3748; font-size:14px; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <span>💾</span> <b>स्टेट स्थिती (Component State):</b> 
+              <span id="uploadCompStateStatusBadge" style="background:#edf2f7; color:#4a5568; font-size:12px; padding:2px 8px; border-radius:12px; font-weight:700;">अप्रक्रियाकृत (Not Committed)</span>
+            </div>
+            <div style="font-size:12.5px; color:#718096;" id="uploadCompStateSummaryText">
+              स्टेटमध्ये ० वैध नोंदी साठवण्यासाठी तयार आहेत.
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="sheet-btn sheet-btn-secondary" style="font-size:13.5px;" onclick="exportValidatedUploadCsv()">
+              📥 प्रमाणीकृत CSV डाऊनलोड करा
+            </button>
+            <button type="button" class="sheet-btn" id="btnCommitUploadState" style="background:#2b6cb0; font-size:14px; font-weight:800; padding:10px 22px;" onclick="commitUploadCompState(this)">
+              💾 सर्व वैध नोंदी स्टेट व सिस्टीममध्ये सेव्ह करा (Store & Sync)
+            </button>
+          </div>
+        </div>
+
+      </div>
   </div>
 
   <div class="app-footer">
@@ -1908,6 +3015,80 @@
         <button type="button" class="sheet-btn sheet-btn-secondary" onclick="closeAddEditSubcenterModal()">रद्द करा</button>
         <button type="button" class="sheet-btn" id="btnSaveSubcenter" style="background:#00796b;" onclick="submitSaveSubcenter(this)">
           💾 उपकेंद्र सेव्ह करा
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universal Data Upload & Import Modal -->
+  <div id="importCsvModal" class="sheet-modal">
+    <div class="sheet-modal-body" style="max-width:750px; width:95%;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:22px;">📂</span>
+          <div>
+            <h3 style="margin:0; color:#2d3748; font-size:18px;" id="uploadModalTitle">डेटा अपलोड व आयात केंद्र (Data Import Center)</h3>
+            <p style="margin:2px 0 0 0; font-size:12px; color:#718096;">CSV फाईल किंवा गुगल शीट कॉपी-पेस्ट द्वारे संपूर्ण डेटाबेस त्वरित अद्ययावत करा</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCsvImportModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:#718096;">✕</button>
+      </div>
+
+      <!-- Dataset Type Selector Tabs -->
+      <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+        <button type="button" id="uploadTabBsData" class="sheet-btn" style="background:#2b6cb0; font-size:12.5px; padding:7px 12px;" onclick="selectUploadDatasetType('bsData')">
+          🩸 BsDataEntry (कर्मचारी रक्त नमुने)
+        </button>
+        <button type="button" id="uploadTabVillage" class="sheet-btn sheet-btn-secondary" style="font-size:12.5px; padding:7px 12px;" onclick="selectUploadDatasetType('village')">
+          🏡 VillageDetails (गावनिहाय तपशील)
+        </button>
+        <button type="button" id="uploadTabMonth" class="sheet-btn sheet-btn-secondary" style="font-size:12.5px; padding:7px 12px;" onclick="selectUploadDatasetType('month')">
+          📅 MonthMaster (गृहभेटी व निर्देशांक)
+        </button>
+        <button type="button" id="uploadTabMaster" class="sheet-btn sheet-btn-secondary" style="font-size:12.5px; padding:7px 12px;" onclick="selectUploadDatasetType('master')">
+          👥 MasterData (६५ कर्मचारी)
+        </button>
+      </div>
+
+      <!-- Instructions & Format Guide -->
+      <div id="uploadDatasetGuide" style="background:#f7fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:14px; font-size:12.5px; line-height:1.5; color:#4a5568;">
+        <!-- Dynamic guide content -->
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="font-weight:600; font-size:13px; color:#2d3748;">📂 CSV फाईल निवडा:</label>
+          <input type="file" id="csvFileInput" accept=".csv,text/csv,text/plain" onchange="handleCsvFileSelected(event)" style="font-size:12px;">
+        </div>
+        <button type="button" class="sheet-btn sheet-btn-secondary" style="padding:4px 10px; font-size:12px;" onclick="fillSampleUploadTemplate()">
+          📝 नमुना टेम्पलेट भरा (Sample Template)
+        </button>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-weight:600; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+          <span>📋 CSV डेटा (किंवा गुगल शीट वरून कॉपी-पेस्ट करा):</span>
+          <span id="csvLineCountBadge" style="font-size:11px; font-weight:normal; color:#718096;">० ओळी</span>
+        </label>
+        <textarea id="csvTextarea" rows="9" oninput="updateCsvLineCount()" placeholder="येथे CSV मजकूर पेस्ट करा..." style="width:100%; font-family:monospace; font-size:12px; padding:10px; border:1px solid #cbd5e0; border-radius:6px; resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <label id="lblReplaceExisting" style="font-size:13px; color:#2d3748; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="chkReplaceExisting" checked>
+          <span><b>आधीचा डेटा पूर्णपणे नवीन डेटाने बदला</b> (Replace existing data)</span>
+        </label>
+        <div style="font-size:12px; color:#718096;">
+          (UTF-8 किंवा मराठी/इंग्रजी हेडर समर्थित)
+        </div>
+      </div>
+
+      <div id="csvImportStatusMsg" style="display:none; padding:12px; border-radius:6px; margin-bottom:14px; font-weight:600; font-size:13px; text-align:center;"></div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="sheet-btn sheet-btn-secondary" onclick="closeCsvImportModal()">रद्द करा</button>
+        <button type="button" class="sheet-btn" id="btnSubmitCsvImport" style="background:#2b6cb0; padding:9px 20px;" onclick="submitUniversalCsvImport(this)">
+          🚀 डेटा इम्पोर्ट व सिंक करा (Upload & Process)
         </button>
       </div>
     </div>
@@ -2696,12 +3877,90 @@
         .getMasterData();
     };
 
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      btn.classList.add('active');
+    // ================= MOBILE NAVIGATION & TAB CONTROLLER =================
+    const tabLabelMap = {
+      'dashboardTab': '📊 डॅशबोर्ड',
+      'monthlyReportDash': '📑 मासिक अहवाल डॅशबोर्ड',
+      'dataEntry': '📝 डेटा एन्ट्री',
+      'masterTab': '🏛️ मास्टर व्यवस्थापन',
+      'uploadTab': '📤 डेटा अपलोड व प्रमाणीकरण',
+      'tablesTab': '📋 डेटा तक्ते (Tables)',
+      'reportTab': '📑 अहवाल व नोटीस',
+      'downloadTab': '📥 डाऊनलोड्स',
+      'photoTab': '🖼️ गॅलरी',
+      'linksTab': '🔗 लिंक्स'
+    };
 
+    function toggleMobileDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const overlay = document.getElementById('mobileDrawerOverlay');
+      if (drawer && overlay) {
+        const isOpen = drawer.classList.contains('open');
+        if (isOpen) {
+          drawer.classList.remove('open');
+          overlay.classList.remove('open');
+        } else {
+          drawer.classList.add('open');
+          overlay.classList.add('open');
+        }
+      }
+    }
+
+    function closeMobileDrawer() {
+      const drawer = document.getElementById('mobileDrawer');
+      const overlay = document.getElementById('mobileDrawerOverlay');
+      if (drawer) drawer.classList.remove('open');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function handleDrawerNav(tabId) {
+      closeMobileDrawer();
+      switchTab(tabId);
+    }
+
+    function switchTab(tabId, btn) {
+      // 1. Switch Active Pane
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add('active');
+
+      // 2. Synchronize Desktop Sidebar Buttons
+      document.querySelectorAll('#desktopSidebar .tab-btn').forEach(b => {
+        if (b.getAttribute('data-tab') === tabId) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+
+      // 3. Synchronize Mobile Drawer Buttons
+      document.querySelectorAll('.mobile-drawer-btn').forEach(b => {
+        if (b.getAttribute('data-tab') === tabId) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+
+      // 4. Synchronize Mobile Bottom Nav Buttons
+      document.querySelectorAll('.bottom-nav-item').forEach(b => {
+        if (b.getAttribute('data-tab') === tabId) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+
+      // 5. Update Mobile Top App Bar Subtitle
+      const mobileSub = document.getElementById('mobileCurrentTabLabel');
+      if (mobileSub && tabLabelMap[tabId]) {
+        mobileSub.textContent = tabLabelMap[tabId];
+      }
+
+      // Scroll smoothly to top on mobile when switching tab
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // 6. Data Loaders
       if (tabId === 'dashboardTab') { 
         if (!dashLoaded) { 
           loadDashboard(); 
@@ -2806,15 +4065,20 @@
       if (moBody && tablesData.monthMaster) {
         let moHtml = '';
         tablesData.monthMaster.forEach((row, i) => {
+          const opdVal = row.newOpd != null ? row.newOpd : (row.opd || 0);
+          const progOpdVal = row.progNewOpd != null ? row.progNewOpd : (row.progOpd || '-');
           const mHtml = `<tr>
             <td>${i + 1}</td>
             <td><b>${row.name}</b></td>
-            <td><b style="color:#2b6cb0;">${row.opd || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progOpd || '-'})</span></td>
+            <td><b style="color:#2b6cb0;">${opdVal}</b> <span style="font-size:11px; color:#718096;">(प्र: ${progOpdVal})</span></td>
+            <td><b style="color:#2c5282;">${row.mpwHomeVisits || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progMpwHomeVisits || '-'})</span></td>
+            <td><b style="color:#276749;">${row.anmHomeVisits || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progAnmHomeVisits || '-'})</span></td>
+            <td><b style="color:#6b46c1;">${row.ashaHomeVisits || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progAshaHomeVisits || '-'})</span></td>
             <td><b style="color:#c05621;">${row.feverCases || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progFeverCases || '-'})</span></td>
             <td><b style="color:#234e52;">${row.bloodSmears || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progBloodSmears || '-'})</span></td>
             <td><b style="color:#276749;">${row.treatedCases || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progTreatedCases || '-'})</span></td>
             <td><b style="color:#553c9a;">${row.chloroquineSpent || 0}</b> <span style="font-size:11px; color:#718096;">(प्र: ${row.progChloroquineSpent || '-'})</span></td>
-            <td style="font-size:11px; color:#4a5568;">FN1: ${row.fn1}<br>FN2: ${row.fn2}</td>
+            <td style="font-size:11px; color:#4a5568;">FN1: ${row.fn1 || '-'}<br>FN2: ${row.fn2 || '-'}</td>
             <td>
               <button class="sheet-btn" style="padding:4px 9px; font-size:12px; background:#00796b;" onclick="openMonthIndicatorsEdit('${row.name}')">
                 ✏️ बदला
@@ -2823,7 +4087,7 @@
           </tr>`;
           moHtml += mHtml;
         });
-        moBody.innerHTML = moHtml || '<tr><td colspan="9" style="text-align:center;">माहिती उपलब्ध नाही.</td></tr>';
+        moBody.innerHTML = moHtml || '<tr><td colspan="12" style="text-align:center;">माहिती उपलब्ध नाही.</td></tr>';
       }
     }
 
@@ -3015,28 +4279,796 @@
     let currentMrdMonth = 'सप्टेंबर २०२६';
     let mrdPriorCache = { opd: 0, feverCases: 0, bloodSmears: 0, treatedCases: 0, chloroquineSpent: 0 };
     let mrdMonthsLoaded = false;
+    let villageAnalyticsData = null;
+    let villageAnalyticsLoaded = false;
+    let villageAnalyticsReactRoot = null;
 
     function switchDashboardSubtab(subtab) {
       currentDashboardSubtab = subtab;
       const btnMonthly = document.getElementById('dashSubtabBtnMonthly');
+      const btnVillage = document.getElementById('dashSubtabBtnVillageAnalytics');
       const btnGeneral = document.getElementById('dashSubtabBtnGeneral');
       const paneMonthly = document.getElementById('subpaneMonthlyReportDashboard');
+      const paneVillage = document.getElementById('subpaneVillageAnalytics');
       const paneGeneral = document.getElementById('subpaneGeneralOverview');
+
+      if (btnMonthly) btnMonthly.classList.remove('active');
+      if (btnVillage) btnVillage.classList.remove('active');
+      if (btnGeneral) btnGeneral.classList.remove('active');
+      if (paneMonthly) paneMonthly.style.display = 'none';
+      if (paneVillage) paneVillage.style.display = 'none';
+      if (paneGeneral) paneGeneral.style.display = 'none';
 
       if (subtab === 'monthlyReport') {
         if (btnMonthly) btnMonthly.classList.add('active');
-        if (btnGeneral) btnGeneral.classList.remove('active');
         if (paneMonthly) paneMonthly.style.display = 'block';
-        if (paneGeneral) paneGeneral.style.display = 'none';
         loadMonthlyReportDashboardData(currentMrdMonth);
+      } else if (subtab === 'villageAnalytics') {
+        if (btnVillage) btnVillage.classList.add('active');
+        if (paneVillage) paneVillage.style.display = 'block';
+        loadVillageAnalyticsData();
       } else {
         if (btnGeneral) btnGeneral.classList.add('active');
-        if (btnMonthly) btnMonthly.classList.remove('active');
         if (paneGeneral) paneGeneral.style.display = 'block';
-        if (paneMonthly) paneMonthly.style.display = 'none';
         if (!dashLoaded) {
           loadDashboardStatsOnly();
         }
+      }
+    }
+
+    function openVillageAnalyticsDirect() {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const dashTab = document.getElementById('dashboardTab');
+      if (dashTab) dashTab.classList.add('active');
+      const sideDash = document.getElementById('sideBtnDashboard');
+      if (sideDash) sideDash.classList.add('active');
+      switchDashboardSubtab('villageAnalytics');
+    }
+
+    function refreshVillageAnalyticsData() {
+      villageAnalyticsLoaded = false;
+      loadVillageAnalyticsData(true);
+    }
+
+    function loadVillageAnalyticsData(forceRefresh = false) {
+      const loader = document.getElementById('villageAnalyticsLoader');
+      const rootDiv = document.getElementById('villageAnalyticsRoot');
+
+      if (villageAnalyticsLoaded && !forceRefresh && villageAnalyticsData) {
+        renderVillageAnalyticsReact(villageAnalyticsData);
+        return;
+      }
+
+      if (loader) loader.style.display = 'block';
+      if (rootDiv && !villageAnalyticsData) rootDiv.innerHTML = '';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (loader) loader.style.display = 'none';
+          if (res && res.villages) {
+            villageAnalyticsData = res;
+            villageAnalyticsLoaded = true;
+            renderVillageAnalyticsReact(res);
+          } else {
+            console.warn('Analytics returned empty or fallback payload:', res);
+            const fallback = buildClientSideAnalyticsData();
+            villageAnalyticsData = fallback;
+            villageAnalyticsLoaded = true;
+            renderVillageAnalyticsReact(fallback);
+          }
+        })
+        .withFailureHandler(err => {
+          console.warn('Analytics RPC error, using local dataset fallback:', err);
+          if (loader) loader.style.display = 'none';
+          const fallback = buildClientSideAnalyticsData();
+          villageAnalyticsData = fallback;
+          villageAnalyticsLoaded = true;
+          renderVillageAnalyticsReact(fallback);
+        })
+        .getEmployeeVillageDistributionSummary();
+    }
+
+    // Client-side fallback generator if offline
+    function buildClientSideAnalyticsData() {
+      const sourceMaster = (typeof masterData !== 'undefined' && masterData.length) ? masterData : (defaultMasterData || []);
+      const villageMap = new Map();
+      const subcenterMap = new Map();
+      let ashaCount = 0, anmCount = 0, mpwCount = 0, moCount = 0;
+
+      sourceMaster.forEach(emp => {
+        const desig = emp.designation || '';
+        let category = 'other';
+        if (desig.includes('आशा') || desig.includes('ASHA')) { category = 'asha'; ashaCount++; }
+        else if (desig.includes('आरोग्य सेविका') || desig.includes('ANM')) { category = 'anm'; anmCount++; }
+        else if (desig.includes('आरोग्य सेवक') || desig.includes('MPW')) { category = 'mpw'; mpwCount++; }
+        else if (desig.includes('वैद्यकीय') || desig.includes('OPD') || desig.includes('प्रा.आ.')) { category = 'mo'; moCount++; }
+
+        const scName = (emp.upkendra || 'इतर').trim();
+        if (!subcenterMap.has(scName)) {
+          subcenterMap.set(scName, { name: scName, employeeCount: 0, ashaCount: 0, anmCount: 0, mpwCount: 0, moCount: 0, villageCount: 0, villages: new Set() });
+        }
+        const sc = subcenterMap.get(scName);
+        sc.employeeCount++;
+        if (category === 'asha') sc.ashaCount++;
+        else if (category === 'anm') sc.anmCount++;
+        else if (category === 'mpw') sc.mpwCount++;
+        else if (category === 'mo') sc.moCount++;
+
+        (emp.villageList || []).forEach(vRaw => {
+          const v = vRaw.trim();
+          sc.villages.add(v);
+          if (!villageMap.has(v)) {
+            villageMap.set(v, {
+              villageName: v,
+              subcenter: scName,
+              population: 1000,
+              houses: 200,
+              annualSmearTarget: 100,
+              ashaList: [],
+              anmList: [],
+              mpwList: [],
+              moList: [],
+              employeeList: [],
+              ashaCount: 0,
+              anmCount: 0,
+              mpwCount: 0,
+              moCount: 0,
+              totalEmployees: 0,
+              totalSmears: 0
+            });
+          }
+          const vObj = villageMap.get(v);
+          vObj.totalEmployees++;
+          vObj.employeeList.push({ name: emp.employeeName, designation: emp.designation, bsCode: emp.bsCode, category });
+          if (category === 'asha') { vObj.ashaList.push(emp.employeeName); vObj.ashaCount++; }
+          else if (category === 'anm') { vObj.anmList.push(emp.employeeName); vObj.anmCount++; }
+          else if (category === 'mpw') { vObj.mpwList.push(emp.employeeName); vObj.mpwCount++; }
+          else if (category === 'mo') { vObj.moList.push(emp.employeeName); vObj.moCount++; }
+        });
+      });
+
+      const employees = sourceMaster.map((emp, idx) => {
+        const desig = emp.designation || '';
+        let category = 'other';
+        if (desig.includes('आशा') || desig.includes('ASHA')) category = 'asha';
+        else if (desig.includes('आरोग्य सेविका') || desig.includes('ANM')) category = 'anm';
+        else if (desig.includes('आरोग्य सेवक') || desig.includes('MPW')) category = 'mpw';
+        else if (desig.includes('वैद्यकीय') || desig.includes('OPD')) category = 'mo';
+
+        return {
+          id: 'EMP_' + (idx + 1),
+          employeeName: emp.employeeName,
+          upkendra: emp.upkendra,
+          designation: emp.designation,
+          category,
+          bsCode: emp.bsCode || '',
+          villageCount: (emp.villageList || []).length,
+          villageList: emp.villageList || [],
+          totalSmears: 0
+        };
+      });
+
+      const villages = Array.from(villageMap.values());
+      const subcenters = Array.from(subcenterMap.values()).map(s => ({ ...s, villageCount: s.villages.size, villages: Array.from(s.villages) }));
+
+      return {
+        overallStats: {
+          totalEmployees: sourceMaster.length,
+          totalVillages: villages.length,
+          totalSubcenters: subcenters.length,
+          totalSmears: 0,
+          avgVillagesPerWorker: sourceMaster.length ? (villages.length / sourceMaster.length).toFixed(2) : '0'
+        },
+        villages,
+        employees,
+        subcenters,
+        designationDistribution: [
+          { name: 'आशा स्वयंसेविका (ASHA)', count: ashaCount, color: '#805ad5' },
+          { name: 'आरोग्य सेविका (ANM)', count: anmCount, color: '#38a169' },
+          { name: 'आरोग्य सेवक (MPW)', count: mpwCount, color: '#3182ce' },
+          { name: 'वैद्यकीय अधिकारी / OPD', count: moCount, color: '#dd6b20' }
+        ].filter(d => d.count > 0)
+      };
+    }
+
+    // ==========================================
+    // REACT & RECHARTS COMPONENT IMPLEMENTATION
+    // ==========================================
+    function renderVillageAnalyticsReact(data) {
+      const rootDiv = document.getElementById('villageAnalyticsRoot');
+      if (!rootDiv) return;
+
+      if (!window.React || !window.ReactDOM) {
+        rootDiv.innerHTML = '<div style="color:red; padding:20px; text-align:center;">React लोड होऊ शकले नाही. कृपया इंटरनेट कनेक्शन तपासा.</div>';
+        return;
+      }
+
+      const e = React.createElement;
+      const { useState, useMemo } = React;
+      const Recharts = window.Recharts;
+
+      function VillageAnalyticsComponent({ data }) {
+        const [selectedSubcenter, setSelectedSubcenter] = useState('All');
+        const [selectedCategory, setSelectedCategory] = useState('All');
+        const [viewMode, setViewMode] = useState('villageBar'); // 'villageBar' | 'empCoverage' | 'subcenterComp' | 'designationPie' | 'matrixTable'
+        const [barLayout, setBarLayout] = useState('stacked'); // 'stacked' | 'grouped'
+        const [searchTerm, setSearchTerm] = useState('');
+        const [sortBy, setSortBy] = useState('staffCount'); // 'staffCount' | 'name' | 'population'
+
+        const overallStats = data.overallStats || {};
+        const allVillages = data.villages || [];
+        const allEmployees = data.employees || [];
+        const allSubcenters = data.subcenters || [];
+        const designationDist = data.designationDistribution || [];
+
+        // Unique subcenters list
+        const subcenterOptions = useMemo(() => {
+          const names = [...new Set(allVillages.map(v => v.subcenter).concat(allSubcenters.map(s => s.name)))].filter(Boolean);
+          return ['All', ...names.sort()];
+        }, [allVillages, allSubcenters]);
+
+        // Filtered villages
+        const filteredVillages = useMemo(() => {
+          return allVillages.filter(v => {
+            const matchesSc = selectedSubcenter === 'All' || v.subcenter === selectedSubcenter;
+            const matchesSearch = !searchTerm || 
+              v.villageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              v.subcenter.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (v.employeeList || []).some(emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            
+            let matchesCategory = true;
+            if (selectedCategory === 'asha') matchesCategory = v.ashaCount > 0;
+            else if (selectedCategory === 'anm') matchesCategory = v.anmCount > 0;
+            else if (selectedCategory === 'mpw') matchesCategory = v.mpwCount > 0;
+            else if (selectedCategory === 'mo') matchesCategory = v.moCount > 0;
+
+            return matchesSc && matchesSearch && matchesCategory;
+          }).sort((a, b) => {
+            if (sortBy === 'name') return a.villageName.localeCompare(b.villageName, 'mr');
+            if (sortBy === 'population') return (b.population || 0) - (a.population || 0);
+            return (b.totalEmployees || 0) - (a.totalEmployees || 0);
+          });
+        }, [allVillages, selectedSubcenter, searchTerm, selectedCategory, sortBy]);
+
+        // Filtered employees
+        const filteredEmployees = useMemo(() => {
+          return allEmployees.filter(emp => {
+            const matchesSc = selectedSubcenter === 'All' || emp.upkendra === selectedSubcenter;
+            const matchesCat = selectedCategory === 'All' || emp.category === selectedCategory;
+            const matchesSearch = !searchTerm ||
+              emp.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              emp.upkendra.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (emp.villageList || []).some(v => v.toLowerCase().includes(searchTerm.toLowerCase()));
+            return matchesSc && matchesCat && matchesSearch;
+          }).sort((a, b) => (b.villageCount || 0) - (a.villageCount || 0));
+        }, [allEmployees, selectedSubcenter, selectedCategory, searchTerm]);
+
+        // Custom Tooltip for Village Bar Chart
+        const CustomVillageTooltip = ({ active, payload, label }) => {
+          if (active && payload && payload.length) {
+            const vData = filteredVillages.find(v => v.villageName === label);
+            if (!vData) return null;
+            return e('div', {
+              style: {
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                padding: '12px 14px',
+                border: '2px solid #319795',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                fontSize: '12px',
+                lineHeight: '1.5',
+                maxWidth: '320px',
+                color: '#2d3748'
+              }
+            }, [
+              e('div', { key: 'title', style: { fontWeight: 'bold', fontSize: '14px', color: '#234e52', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' } }, `🏡 गाव: ${label} (${vData.subcenter})`),
+              e('div', { key: 'stats', style: { fontSize: '11px', color: '#718096', marginBottom: '6px' } }, `👥 लोकसंख्या: ${vData.population || '--'} | 🏠 घरे: ${vData.houses || '--'} | 🎯 उद्दिष्ट: ${vData.annualSmearTarget || '--'}`),
+              e('div', { key: 'asha', style: { color: '#805ad5', fontWeight: '600' } }, `💜 आशा (${vData.ashaCount}): ${(vData.ashaList || []).join(', ') || 'नाही'}`),
+              e('div', { key: 'anm', style: { color: '#38a169', fontWeight: '600' } }, `💚 ANM (${vData.anmCount}): ${(vData.anmList || []).join(', ') || 'नाही'}`),
+              e('div', { key: 'mpw', style: { color: '#3182ce', fontWeight: '600' } }, `💙 MPW (${vData.mpwCount}): ${(vData.mpwList || []).join(', ') || 'नाही'}`),
+              vData.moCount > 0 ? e('div', { key: 'mo', style: { color: '#dd6b20', fontWeight: '600' } }, `🧡 OPD/MO (${vData.moCount}): ${(vData.moList || []).join(', ')}`) : null,
+              e('div', { key: 'tot', style: { marginTop: '6px', paddingTop: '4px', borderTop: '1px dashed #cbd5e0', fontWeight: 'bold', color: '#1a202c' } }, `एकूण नियुक्त कर्मचारी: ${vData.totalEmployees}`)
+            ]);
+          }
+          return null;
+        };
+
+        // Custom Tooltip for Employee Bar Chart
+        const CustomEmployeeTooltip = ({ active, payload, label }) => {
+          if (active && payload && payload.length) {
+            const empData = filteredEmployees.find(e => e.employeeName === label);
+            if (!empData) return null;
+            return e('div', {
+              style: {
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                padding: '12px 14px',
+                border: '2px solid #3182ce',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                fontSize: '12px',
+                lineHeight: '1.5',
+                maxWidth: '300px'
+              }
+            }, [
+              e('div', { key: 'name', style: { fontWeight: 'bold', fontSize: '13px', color: '#2b6cb0', marginBottom: '4px' } }, `👤 ${empData.employeeName}`),
+              e('div', { key: 'desig', style: { fontSize: '11px', color: '#4a5568' } }, `🏷️ ${empData.designation} (${empData.upkendra})`),
+              e('div', { key: 'bscode', style: { fontSize: '11px', color: '#718096' } }, `🔢 BS Code: ${empData.bsCode || '--'}`),
+              e('div', { key: 'villages', style: { marginTop: '6px', color: '#2d3748' } }, `🏡 समाविष्ट गावे (${empData.villageCount}): ${(empData.villageList || []).join(', ')}`),
+              e('div', { key: 'smears', style: { marginTop: '4px', fontWeight: 'bold', color: '#276749' } }, `🩸 घेतलेले नमुने: ${empData.totalSmears}`)
+            ]);
+          }
+          return null;
+        };
+
+        return e('div', { style: { display: 'flex', flexDirection: 'column', gap: '20px' } }, [
+
+          // Top KPI Metric Cards Grid
+          e('div', {
+            key: 'kpi-grid',
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '12px'
+            }
+          }, [
+            e('div', { key: 'card1', style: { background: 'linear-gradient(135deg, #ebf8ff, #bee3f8)', padding: '14px 16px', borderRadius: '10px', border: '1px solid #90cdf4', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' } }, [
+              e('div', { style: { fontSize: '12px', color: '#2b6cb0', fontWeight: 'bold' } }, '👥 एकूण कर्मचारी'),
+              e('div', { style: { fontSize: '24px', fontWeight: '800', color: '#2c5282', marginTop: '2px' } }, overallStats.totalEmployees || allEmployees.length),
+              e('div', { style: { fontSize: '11px', color: '#4a5568', marginTop: '2px' } }, '६५ कर्मचारी मास्टर डेटा')
+            ]),
+            e('div', { key: 'card2', style: { background: 'linear-gradient(135deg, #f0fff4, #c6f6d5)', padding: '14px 16px', borderRadius: '10px', border: '1px solid #9ae6b4', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' } }, [
+              e('div', { style: { fontSize: '12px', color: '#276749', fontWeight: 'bold' } }, '🏡 समाविष्ट गावे / वाड्या'),
+              e('div', { style: { fontSize: '24px', fontWeight: '800', color: '#22543d', marginTop: '2px' } }, overallStats.totalVillages || allVillages.length),
+              e('div', { style: { fontSize: '11px', color: '#4a5568', marginTop: '2px' } }, '३० गावे क्षेत्र विस्तार')
+            ]),
+            e('div', { key: 'card3', style: { background: 'linear-gradient(135deg, #faf5ff, #e9d8fd)', padding: '14px 16px', borderRadius: '10px', border: '1px solid #d6bcfa', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' } }, [
+              e('div', { style: { fontSize: '12px', color: '#6b46c1', fontWeight: 'bold' } }, '💜 आशा स्वयंसेविका'),
+              e('div', { style: { fontSize: '24px', fontWeight: '800', color: '#553c9a', marginTop: '2px' } }, allEmployees.filter(e => e.category === 'asha').length),
+              e('div', { style: { fontSize: '11px', color: '#4a5568', marginTop: '2px' } }, '४७ फिल्ड आशा कर्मचारी')
+            ]),
+            e('div', { key: 'card4', style: { background: 'linear-gradient(135deg, #e6fffa, #b2f5ea)', padding: '14px 16px', borderRadius: '10px', border: '1px solid #81e6d9', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' } }, [
+              e('div', { style: { fontSize: '12px', color: '#234e52', fontWeight: 'bold' } }, '💚 ANM / MPW कर्मचारी'),
+              e('div', { style: { fontSize: '24px', fontWeight: '800', color: '#234e52', marginTop: '2px' } }, `${allEmployees.filter(e => e.category === 'anm').length + allEmployees.filter(e => e.category === 'mpw').length}`),
+              e('div', { style: { fontSize: '11px', color: '#4a5568', marginTop: '2px' } }, '७ ANM + १० MPW')
+            ]),
+            e('div', { key: 'card5', style: { background: 'linear-gradient(135deg, #fffaf0, #feebc8)', padding: '14px 16px', borderRadius: '10px', border: '1px solid #fbd38d', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' } }, [
+              e('div', { style: { fontSize: '12px', color: '#c05621', fontWeight: 'bold' } }, '🏛️ एकूण उपकेंद्रे'),
+              e('div', { style: { fontSize: '24px', fontWeight: '800', color: '#9c4221', marginTop: '2px' } }, overallStats.totalSubcenters || allSubcenters.length),
+              e('div', { style: { fontSize: '11px', color: '#4a5568', marginTop: '2px' } }, '८ उपकेंद्रे + १ प्रा.आ.केंद्र')
+            ])
+          ]),
+
+          // Interactive Filter Bar & Controls
+          e('div', {
+            key: 'controls-bar',
+            style: {
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              padding: '14px 16px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }
+          }, [
+            // Left Filters
+            e('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' } }, [
+              // Subcenter dropdown
+              e('div', { key: 'sc-filter' }, [
+                e('label', { style: { fontSize: '11px', fontWeight: 'bold', color: '#4a5568', display: 'block', marginBottom: '2px' } }, '🏛️ उपकेंद्र निवडा:'),
+                e('select', {
+                  value: selectedSubcenter,
+                  onChange: (ev) => setSelectedSubcenter(ev.target.value),
+                  style: { padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '13px', background: '#fff' }
+                }, subcenterOptions.map(sc => e('option', { key: sc, value: sc }, sc === 'All' ? 'सर्व उपकेंद्रे (All)' : sc)))
+              ]),
+
+              // Designation filter
+              e('div', { key: 'cat-filter' }, [
+                e('label', { style: { fontSize: '11px', fontWeight: 'bold', color: '#4a5568', display: 'block', marginBottom: '2px' } }, '🏷️ संवर्ग निवडा:'),
+                e('select', {
+                  value: selectedCategory,
+                  onChange: (ev) => setSelectedCategory(ev.target.value),
+                  style: { padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '13px', background: '#fff' }
+                }, [
+                  e('option', { key: 'all', value: 'All' }, 'सर्व संवर्ग (All Roles)'),
+                  e('option', { key: 'asha', value: 'asha' }, '💜 आशा स्वयंसेविका (ASHA)'),
+                  e('option', { key: 'anm', value: 'anm' }, '💚 आरोग्य सेविका (ANM)'),
+                  e('option', { key: 'mpw', value: 'mpw' }, '💙 आरोग्य सेवक (MPW)'),
+                  e('option', { key: 'mo', value: 'mo' }, '🧡 वैद्यकीय अधिकारी (OPD)')
+                ])
+              ]),
+
+              // Sort filter
+              e('div', { key: 'sort-filter' }, [
+                e('label', { style: { fontSize: '11px', fontWeight: 'bold', color: '#4a5568', display: 'block', marginBottom: '2px' } }, '🔢 क्रमवारी (Sort):'),
+                e('select', {
+                  value: sortBy,
+                  onChange: (ev) => setSortBy(ev.target.value),
+                  style: { padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '13px', background: '#fff' }
+                }, [
+                  e('option', { key: 'staff', value: 'staffCount' }, 'कर्मचारी संख्येनुसार (जास्त ते कमी)'),
+                  e('option', { key: 'name', value: 'name' }, 'गावाच्या नावानुसार (अ - ज्ञ)'),
+                  e('option', { key: 'pop', value: 'population' }, 'लोकसंख्येनुसार')
+                ])
+              ]),
+
+              // Search input
+              e('div', { key: 'search-box' }, [
+                e('label', { style: { fontSize: '11px', fontWeight: 'bold', color: '#4a5568', display: 'block', marginBottom: '2px' } }, '🔍 शोधा (गाव / कर्मचारी):'),
+                e('input', {
+                  type: 'text',
+                  placeholder: 'गाव किंवा कर्मचारी शोधा...',
+                  value: searchTerm,
+                  onChange: (ev) => setSearchTerm(ev.target.value),
+                  style: { padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '13px', width: '180px', background: '#fff' }
+                })
+              ])
+            ]),
+
+            // View Mode Switcher Buttons
+            e('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' } }, [
+              e('button', {
+                type: 'button',
+                key: 'v1',
+                onClick: () => setViewMode('villageBar'),
+                style: {
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  border: '1px solid #319795',
+                  background: viewMode === 'villageBar' ? '#319795' : '#fff',
+                  color: viewMode === 'villageBar' ? '#fff' : '#234e52'
+                }
+              }, '📊 गावनिहाय वाटप'),
+              e('button', {
+                type: 'button',
+                key: 'v2',
+                onClick: () => setViewMode('empCoverage'),
+                style: {
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  border: '1px solid #3182ce',
+                  background: viewMode === 'empCoverage' ? '#3182ce' : '#fff',
+                  color: viewMode === 'empCoverage' ? '#fff' : '#2b6cb0'
+                }
+              }, '👥 कर्मचारीनिहाय कव्हरेज'),
+              e('button', {
+                type: 'button',
+                key: 'v3',
+                onClick: () => setViewMode('subcenterComp'),
+                style: {
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  border: '1px solid #805ad5',
+                  background: viewMode === 'subcenterComp' ? '#805ad5' : '#fff',
+                  color: viewMode === 'subcenterComp' ? '#fff' : '#553c9a'
+                }
+              }, '🏛️ उपकेंद्र तुलना'),
+              e('button', {
+                type: 'button',
+                key: 'v4',
+                onClick: () => setViewMode('designationPie'),
+                style: {
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  border: '1px solid #dd6b20',
+                  background: viewMode === 'designationPie' ? '#dd6b20' : '#fff',
+                  color: viewMode === 'designationPie' ? '#fff' : '#c05621'
+                }
+              }, '🥧 संवर्ग टक्केवारी'),
+              e('button', {
+                type: 'button',
+                key: 'v5',
+                onClick: () => setViewMode('matrixTable'),
+                style: {
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  border: '1px solid #4a5568',
+                  background: viewMode === 'matrixTable' ? '#4a5568' : '#fff',
+                  color: viewMode === 'matrixTable' ? '#fff' : '#2d3748'
+                }
+              }, '📋 मॅट्रिक्स तक्ता')
+            ])
+          ]),
+
+          // Main Recharts Area Container
+          e('div', {
+            key: 'main-content-card',
+            style: {
+              background: '#fff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }
+          }, [
+
+            // VIEW 1: VILLAGE-WISE EMPLOYEE DISTRIBUTION (RECHARTS BAR CHART)
+            viewMode === 'villageBar' && e('div', { key: 'village-bar-view' }, [
+              e('div', {
+                style: {
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '14px',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }
+              }, [
+                e('div', {}, [
+                  e('h4', { style: { margin: 0, color: '#234e52', fontSize: '15px' } }, `📊 गावनिहाय कर्मचारी वाटप आलेख (${filteredVillages.length} गावे दाखवली आहेत)`),
+                  e('p', { style: { margin: '2px 0 0 0', fontSize: '12px', color: '#718096' } }, 'प्रत्येक गावामध्ये नियुक्त आशा, आरोग्य सेविका (ANM), आरोग्य सेवक (MPW) व वैद्यकीय अधिकारी यांची संख्या')
+                ]),
+                e('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } }, [
+                  e('span', { style: { fontSize: '12px', color: '#4a5568', fontWeight: 'bold' } }, 'आलेख प्रकार:'),
+                  e('button', {
+                    type: 'button',
+                    onClick: () => setBarLayout('stacked'),
+                    style: {
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: '1px solid #319795',
+                      background: barLayout === 'stacked' ? '#319795' : '#fff',
+                      color: barLayout === 'stacked' ? '#fff' : '#234e52',
+                      cursor: 'pointer'
+                    }
+                  }, 'एकावर एक (Stacked)'),
+                  e('button', {
+                    type: 'button',
+                    onClick: () => setBarLayout('grouped'),
+                    style: {
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      borderRadius: '4px',
+                      border: '1px solid #319795',
+                      background: barLayout === 'grouped' ? '#319795' : '#fff',
+                      color: barLayout === 'grouped' ? '#fff' : '#234e52',
+                      cursor: 'pointer'
+                    }
+                  }, 'शेजारी शेजारी (Grouped)')
+                ])
+              ]),
+
+              Recharts && e('div', { style: { width: '100%', height: '480px', marginTop: '10px' } }, [
+                e(Recharts.ResponsiveContainer, { width: '100%', height: '100%' }, [
+                  e(Recharts.BarChart, {
+                    data: filteredVillages,
+                    margin: { top: 20, right: 30, left: 10, bottom: 80 }
+                  }, [
+                    e(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: '#edf2f7' }),
+                    e(Recharts.XAxis, {
+                      dataKey: 'villageName',
+                      angle: -45,
+                      textAnchor: 'end',
+                      interval: 0,
+                      tick: { fontSize: 11, fill: '#4a5568', fontWeight: 600 }
+                    }),
+                    e(Recharts.YAxis, {
+                      allowDecimals: false,
+                      tick: { fontSize: 12, fill: '#4a5568' },
+                      label: { value: 'कर्मचारी संख्या (Staff Count)', angle: -90, position: 'insideLeft', style: { fill: '#718096', fontSize: '11px' } }
+                    }),
+                    e(Recharts.Tooltip, { content: e(CustomVillageTooltip) }),
+                    e(Recharts.Legend, { verticalAlign: 'top', height: 36 }),
+                    e(Recharts.Bar, {
+                      dataKey: 'ashaCount',
+                      name: 'आशा स्वयंसेविका (ASHA)',
+                      fill: '#805ad5',
+                      stackId: barLayout === 'stacked' ? 'staff' : undefined,
+                      radius: barLayout === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]
+                    }),
+                    e(Recharts.Bar, {
+                      dataKey: 'anmCount',
+                      name: 'आरोग्य सेविका (ANM)',
+                      fill: '#38a169',
+                      stackId: barLayout === 'stacked' ? 'staff' : undefined,
+                      radius: barLayout === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]
+                    }),
+                    e(Recharts.Bar, {
+                      dataKey: 'mpwCount',
+                      name: 'आरोग्य सेवक (MPW)',
+                      fill: '#3182ce',
+                      stackId: barLayout === 'stacked' ? 'staff' : undefined,
+                      radius: barLayout === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]
+                    }),
+                    e(Recharts.Bar, {
+                      dataKey: 'moCount',
+                      name: 'वैद्यकीय अधिकारी (OPD)',
+                      fill: '#dd6b20',
+                      stackId: barLayout === 'stacked' ? 'staff' : undefined,
+                      radius: barLayout === 'stacked' ? [4, 4, 0, 0] : [4, 4, 0, 0]
+                    })
+                  ])
+                ])
+              ])
+            ]),
+
+            // VIEW 2: EMPLOYEE-WISE COVERAGE (RECHARTS BAR CHART)
+            viewMode === 'empCoverage' && e('div', { key: 'emp-coverage-view' }, [
+              e('div', { style: { marginBottom: '14px' } }, [
+                e('h4', { style: { margin: 0, color: '#2b6cb0', fontSize: '15px' } }, `👥 कर्मचारीनिहाय वाटप केलेली गावे (${filteredEmployees.length} कर्मचारी)`),
+                e('p', { style: { margin: '2px 0 0 0', fontSize: '12px', color: '#718096' } }, 'प्रत्येक आरोग्य कर्मचारी आणि आशा स्वयंसेविकेकडे सोपवलेली एकूण गावांची संख्या')
+              ]),
+              Recharts && e('div', { style: { width: '100%', height: '520px' } }, [
+                e(Recharts.ResponsiveContainer, { width: '100%', height: '100%' }, [
+                  e(Recharts.BarChart, {
+                    data: filteredEmployees.slice(0, 35),
+                    margin: { top: 20, right: 30, left: 10, bottom: 95 }
+                  }, [
+                    e(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: '#edf2f7' }),
+                    e(Recharts.XAxis, {
+                      dataKey: 'employeeName',
+                      angle: -50,
+                      textAnchor: 'end',
+                      interval: 0,
+                      tick: { fontSize: 10, fill: '#2d3748', fontWeight: 500 }
+                    }),
+                    e(Recharts.YAxis, {
+                      allowDecimals: false,
+                      tick: { fontSize: 12, fill: '#4a5568' },
+                      label: { value: 'गावांची संख्या (Villages Assigned)', angle: -90, position: 'insideLeft', style: { fill: '#718096', fontSize: '11px' } }
+                    }),
+                    e(Recharts.Tooltip, { content: e(CustomEmployeeTooltip) }),
+                    e(Recharts.Legend, { verticalAlign: 'top', height: 36 }),
+                    e(Recharts.Bar, {
+                      dataKey: 'villageCount',
+                      name: 'समाविष्ट गावे संख्या',
+                      fill: '#3182ce',
+                      radius: [4, 4, 0, 0]
+                    })
+                  ])
+                ])
+              ])
+            ]),
+
+            // VIEW 3: SUBCENTER COMPARISON (RECHARTS COMPOSED CHART)
+            viewMode === 'subcenterComp' && e('div', { key: 'sc-comp-view' }, [
+              e('div', { style: { marginBottom: '14px' } }, [
+                e('h4', { style: { margin: 0, color: '#553c9a', fontSize: '15px' } }, '🏛️ उपकेंद्रनिहाय कर्मचारी व गावे वाटप तुलना'),
+                e('p', { style: { margin: '2px 0 0 0', fontSize: '12px', color: '#718096' } }, 'सर्व ८ उपकेंद्रांमधील कर्मचारी संख्या, गावांची संख्या आणि लोकसंख्या तुलना')
+              ]),
+              Recharts && e('div', { style: { width: '100%', height: '460px' } }, [
+                e(Recharts.ResponsiveContainer, { width: '100%', height: '100%' }, [
+                  e(Recharts.BarChart, {
+                    data: allSubcenters,
+                    margin: { top: 20, right: 30, left: 10, bottom: 40 }
+                  }, [
+                    e(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: '#edf2f7' }),
+                    e(Recharts.XAxis, { dataKey: 'name', tick: { fontSize: 12, fill: '#2d3748', fontWeight: 700 } }),
+                    e(Recharts.YAxis, { allowDecimals: false, tick: { fontSize: 12, fill: '#4a5568' } }),
+                    e(Recharts.Tooltip, {
+                      contentStyle: { background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e0', fontSize: '12px' }
+                    }),
+                    e(Recharts.Legend, { verticalAlign: 'top', height: 36 }),
+                    e(Recharts.Bar, { dataKey: 'employeeCount', name: 'एकूण कर्मचारी संख्या', fill: '#805ad5', radius: [4, 4, 0, 0] }),
+                    e(Recharts.Bar, { dataKey: 'villageCount', name: 'समाविष्ट गावे', fill: '#38a169', radius: [4, 4, 0, 0] }),
+                    e(Recharts.Bar, { dataKey: 'ashaCount', name: 'आशा संख्या', fill: '#d69e2e', radius: [4, 4, 0, 0] })
+                  ])
+                ])
+              ])
+            ]),
+
+            // VIEW 4: DESIGNATION DONUT / PIE CHART
+            viewMode === 'designationPie' && e('div', { key: 'pie-view' }, [
+              e('div', { style: { marginBottom: '14px', textAlign: 'center' } }, [
+                e('h4', { style: { margin: 0, color: '#c05621', fontSize: '16px' } }, '🥧 संवर्गनिहाय कर्मचारी विभागणी (Role Distribution)'),
+                e('p', { style: { margin: '2px 0 0 0', fontSize: '12px', color: '#718096' } }, '६५ कर्मचाऱ्यांची पदनिहाय टक्केवारी आणि एकूण प्रमाण')
+              ]),
+              Recharts && e('div', { style: { width: '100%', height: '420px', display: 'flex', justifyContent: 'center' } }, [
+                e(Recharts.ResponsiveContainer, { width: '100%', height: '100%' }, [
+                  e(Recharts.PieChart, {}, [
+                    e(Recharts.Pie, {
+                      data: designationDist,
+                      dataKey: 'count',
+                      nameKey: 'name',
+                      cx: '50%',
+                      cy: '50%',
+                      innerRadius: 80,
+                      outerRadius: 140,
+                      paddingAngle: 4,
+                      label: ({ name, count, percent }) => `${name.split(' ')[0]}: ${count} (${(percent * 100).toFixed(0)}%)`
+                    }, designationDist.map((entry, index) => e(Recharts.Cell, { key: `cell-${index}`, fill: entry.color }))),
+                    e(Recharts.Tooltip, {
+                      formatter: (value, name) => [`${value} कर्मचारी`, name]
+                    }),
+                    e(Recharts.Legend, { verticalAlign: 'bottom', height: 36 })
+                  ])
+                ])
+              ])
+            ]),
+
+            // VIEW 5: DETAILED VILLAGE-EMPLOYEE MATRIX TABLE
+            viewMode === 'matrixTable' && e('div', { key: 'matrix-view' }, [
+              e('div', { style: { marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
+                e('div', {}, [
+                  e('h4', { style: { margin: 0, color: '#2d3748', fontSize: '15px' } }, `📋 तपशीलवार गावनिहाय कर्मचारी वाटप तक्ता (${filteredVillages.length} गावे)`),
+                  e('p', { style: { margin: '2px 0 0 0', fontSize: '12px', color: '#718096' } }, 'गाव, उपकेंद्र, लोकसंख्या आणि नियुक्त आशा, ANM व MPW ची नावे')
+                ])
+              ]),
+              e('div', { style: { overflowX: 'auto' } }, [
+                e('table', {
+                  className: 'app-table',
+                  style: { width: '100%', fontSize: '12px', borderCollapse: 'collapse', border: '1px solid #e2e8f0' }
+                }, [
+                  e('thead', { key: 'th' }, [
+                    e('tr', { style: { background: '#f7fafc', color: '#2d3748', fontWeight: 700 } }, [
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0', width: '40px' } }, 'अ.क्र.'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'गावाचे नाव'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'उपकेंद्र'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'लोकसंख्या'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'आशा स्वयंसेविका (ASHA)'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'आरोग्य सेविका (ANM)'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0' } }, 'आरोग्य सेवक (MPW)'),
+                      e('th', { style: { padding: '10px 8px', border: '1px solid #cbd5e0', textAlign: 'center' } }, 'एकूण कर्मचारी')
+                    ])
+                  ]),
+                  e('tbody', { key: 'tb' }, filteredVillages.map((v, idx) => {
+                    return e('tr', {
+                      key: v.villageName,
+                      style: { background: idx % 2 === 0 ? '#fff' : '#f8fafc' }
+                    }, [
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 600 } }, idx + 1),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0', fontWeight: 700, color: '#2b6cb0' } }, v.villageName),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0', fontWeight: 600 } }, v.subcenter),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0', textAlign: 'center' } }, v.population || '--'),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0' } }, 
+                        (v.ashaList && v.ashaList.length) ? v.ashaList.map(name => e('span', {
+                          key: name,
+                          style: { display: 'inline-block', background: '#faf5ff', color: '#6b46c1', border: '1px solid #d6bcfa', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', margin: '2px', fontWeight: 600 }
+                        }, name)) : e('span', { style: { color: '#a0aec0' } }, '--')
+                      ),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0' } }, 
+                        (v.anmList && v.anmList.length) ? v.anmList.map(name => e('span', {
+                          key: name,
+                          style: { display: 'inline-block', background: '#f0fff4', color: '#276749', border: '1px solid #9ae6b4', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', margin: '2px', fontWeight: 600 }
+                        }, name)) : e('span', { style: { color: '#a0aec0' } }, '--')
+                      ),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0' } }, 
+                        (v.mpwList && v.mpwList.length) ? v.mpwList.map(name => e('span', {
+                          key: name,
+                          style: { display: 'inline-block', background: '#ebf8ff', color: '#2b6cb0', border: '1px solid #90cdf4', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', margin: '2px', fontWeight: 600 }
+                        }, name)) : e('span', { style: { color: '#a0aec0' } }, '--')
+                      ),
+                      e('td', { style: { padding: '8px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 800, color: '#2d3748', fontSize: '13px' } }, v.totalEmployees)
+                    ]);
+                  }))
+                ])
+              ])
+            ])
+
+          ])
+
+        ]);
+      }
+
+      try {
+        if (!villageAnalyticsReactRoot) {
+          villageAnalyticsReactRoot = ReactDOM.createRoot(rootDiv);
+        }
+        villageAnalyticsReactRoot.render(e(VillageAnalyticsComponent, { data }));
+      } catch (err) {
+        console.error('Error rendering Recharts analytics React root:', err);
+        // Fallback for React 17/legacy or error
+        ReactDOM.render(e(VillageAnalyticsComponent, { data }), rootDiv);
       }
     }
 
@@ -5407,6 +7439,996 @@
           alert('⚠️ सर्व्हर एरर: ' + err.message);
         })
         .deleteSubcenter(id);
+    }
+
+    // Universal CSV & Google Sheet Import Handlers
+    let currentUploadType = 'bsData';
+
+    const uploadDatasetGuides = {
+      bsData: {
+        title: '🩸 BsDataEntry (कर्मचारीनिहाय रक्त नमुना नोंद)',
+        desc: 'या शीटमध्ये कर्मचाऱ्याने घेतलेल्या रक्त नमुन्यांची नोंद असते (BS ID, तारीख, उपकेंद्र, कर्मचारी नाव, पद, BS Code, बंडल क्र., पासून, पर्यंत, एकूण).',
+        sample: `BS_ID,तारीख,उपकेंद्र,कर्मचारी_नाव,पदनाम,BS_Code,बंडल_क्रमांक,पासून,पर्यंत,एकूण_नमुने
+BS-1001,2026-09-02,आलमला,श्रीमती पुनम रावसाहेब काळे,आशा स्वयंसेविका (ASHA),54F6V3,BND-01,1,10,10
+BS-1002,2026-09-03,भेटा,श्री परमेश्वर काळे,आरोग्य सेवक (MPW),54S3,BND-02,1,15,15
+BS-1003,2026-09-04,लखनगाव,श्रीमती जगताप ए टी,आरोग्य सेविका (ANM),54F7,BND-03,1,12,12
+BS-1004,2026-09-05,मंगरूळ,श्री शिंदे एस एम,आरोग्य सेवक (MPW),54S4,BND-04,1,14,14
+BS-1005,2026-09-06,मातोळा,श्रीमती म्हेत्रे एस.एम.,आरोग्य सेविका (ANM),54F1,BND-05,1,16,16
+BS-1006,2026-09-07,शिवली,श्री पाटील व्ही एम,आरोग्य सेवक (MPW),54S2,BND-06,1,18,18`
+      },
+      village: {
+        title: '🏡 VillageDetails (गावनिहाय रक्त नमुना तपशील)',
+        desc: 'या शीटमध्ये गावनिहाय घेतलेल्या रक्त नमुन्यांची (पुरुष, स्त्री, एकूण) माहिती असते. BS ID द्वारे ही नोंद मुख्य रक्त नमुन्याशी जोडली जाते.',
+        sample: `BS_ID,तारीख,उपकेंद्र,कर्मचारी_नाव,गाव_नाव,पुरुष,स्त्री,एकूण_नमुने
+BS-1001,2026-09-02,आलमला,श्रीमती पुनम रावसाहेब काळे,आलमला,4,6,10
+BS-1002,2026-09-03,भेटा,श्री परमेश्वर काळे,भेटा,5,4,9
+BS-1002,2026-09-03,भेटा,श्री परमेश्वर काळे,आंदोरा,3,3,6
+BS-1003,2026-09-04,लखनगाव,श्रीमती जगताप ए टी,लखनगांव,6,6,12
+BS-1004,2026-09-05,मंगरूळ,श्री शिंदे एस एम,मंगरूळ,7,7,14
+BS-1005,2026-09-06,मातोळा,श्रीमती म्हेत्रे एस.एम.,मातोळा,8,8,16
+BS-1006,2026-09-07,शिवली,श्री पाटील व्ही एम,शिवली,9,9,18`
+      },
+      month: {
+        title: '📅 MonthMaster (मासिक पंधरवडा, OPD, गृहभेटी व निर्देशांक)',
+        desc: 'या शीटमध्ये प्रत्येक महिन्याचे पंधरवडा १ व २, नवीन OPD, MPW गृहभेटी, ANM गृहभेटी, आशा गृहभेटी, तापाचे रुग्ण, रक्त नमुने, उपचारीत रुग्ण व क्लोरोक्वीन गोळ्यांचा खर्च समाविष्ट असतो.',
+        sample: `महिना,नवीन_OPD,प्र_नवीन_OPD,MPW_गृहभेटी,प्र_MPW_गृहभेटी,ANM_गृहभेटी,प्र_ANM_गृहभेटी,आशा_गृहभेटी,प्र_आशा_गृहभेटी,तापाचे_रुग्ण,प्र_तापाचे_रुग्ण,रक्त_नमुने,प्र_रक्त_नमुने,उपचारीत_रुग्ण,प्र_उपचारीत_रुग्ण,क्लोरोक्वीन_खर्च,प्र_क्लोरोक्वीन_खर्च,पंधरवडा_१,पंधरवडा_२
+जानेवारी २०२६,1450,1450,420,420,380,380,620,620,135,135,128,128,128,128,512,512,01/01/2026 ते 15/01/2026,16/01/2026 ते 31/01/2026
+फेब्रुवारी २०२६,1380,2830,410,830,370,750,590,1210,120,255,115,243,115,243,460,972,01/02/2026 ते 14/02/2026,15/02/2026 ते 28/02/2026
+मार्च २०२६,1520,4350,430,1260,390,1140,640,1850,142,397,136,379,136,379,544,1516,01/03/2026 ते 15/03/2026,16/03/2026 ते 31/03/2026
+एप्रिल २०२६,1490,5840,415,1675,385,1525,610,2460,138,535,130,509,130,509,520,2036,01/04/2026 ते 15/04/2026,16/04/2026 ते 30/04/2026
+मे २०२६,1600,7440,440,2115,400,1925,650,3110,155,690,148,657,148,657,592,2628,01/05/2026 ते 15/05/2026,16/05/2026 ते 31/05/2026
+जून २०२६,1750,9190,460,2575,420,2345,690,3800,180,870,172,829,172,829,688,3316,01/06/2026 ते 15/06/2026,16/06/2026 ते 30/06/2026
+जुलै २०२६,1920,11110,480,3055,440,2785,730,4530,210,1080,205,1034,205,1034,820,4136,01/07/2026 ते 15/07/2026,16/07/2026 ते 31/07/2026
+ऑगस्ट २०२६,2050,13160,510,3565,460,3245,780,5310,240,1320,235,1269,235,1269,940,5076,01/08/2026 ते 15/08/2026,16/08/2026 ते 31/08/2026
+सप्टेंबर २०२६,2180,15340,530,4095,480,3725,820,6130,265,1585,258,1527,258,1527,1032,6108,01/09/2026 ते 15/09/2026,16/09/2026 ते 30/09/2026`
+      },
+      master: {
+        title: '👥 MasterData (६५ कर्मचारी व कार्यक्षेत्र गावे)',
+        desc: 'प्रा.आ. केंद्र आलमला अंतर्गत ६ उपकेंद्रांमधील ६५ कर्मचारी, त्यांची पदे, BS Code आणि कार्यक्षेत्र गावांची यादी.',
+        sample: `उपकेंद्र,कर्मचारी नाव,पदनाम,Bs Code,गावांची यादी
+आलमला,श्रीमती पुनम रावसाहेब काळे,आशा स्वयंसेविका (ASHA),54F6V3,आलमला
+भेटा,श्री परमेश्वर काळे,आरोग्य सेवक (MPW),54S3,"भेटा, आंदोरा, वडजी, नाव्होली"
+लखनगाव,श्रीमती जगताप ए टी,आरोग्य सेविका (ANM),54F7,"लखनगांव, सत्तधरवाडी, उटी बु., सोनपट्टी तांडा"
+मंगरूळ,श्री शिंदे एस एम,आरोग्य सेवक (MPW),54S4,"मंगरूळ, कासार जवळगा, बोरगाव, हाळदुर्ग, शिंदेवाडी"`
+      }
+    };
+
+    function openUniversalUploadModal(datasetType) {
+      const type = datasetType || 'bsData';
+      selectUploadDatasetType(type);
+      const modal = document.getElementById('importCsvModal');
+      const msg = document.getElementById('csvImportStatusMsg');
+      if (msg) msg.style.display = 'none';
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function openCsvImportModal() {
+      openUniversalUploadModal('master');
+    }
+
+    function closeCsvImportModal() {
+      const modal = document.getElementById('importCsvModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function selectUploadDatasetType(type) {
+      currentUploadType = type;
+      ['bsData', 'village', 'month', 'master'].forEach(t => {
+        const btnId = 'uploadTab' + t.charAt(0).toUpperCase() + t.slice(1);
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          if (t === type) {
+            btn.className = 'sheet-btn';
+            btn.style.background = '#2b6cb0';
+            btn.style.color = '#ffffff';
+          } else {
+            btn.className = 'sheet-btn sheet-btn-secondary';
+            btn.style.background = '';
+            btn.style.color = '';
+          }
+        }
+      });
+
+      const guide = uploadDatasetGuides[type];
+      const guideBox = document.getElementById('uploadDatasetGuide');
+      if (guideBox && guide) {
+        guideBox.innerHTML = `<b>${guide.title}</b><br>${guide.desc}`;
+      }
+
+      const replaceLabel = document.getElementById('lblReplaceExisting');
+      if (replaceLabel) {
+        if (type === 'month') {
+          replaceLabel.innerHTML = `<input type="checkbox" id="chkReplaceExisting" checked> <span><b>विद्यमान महिन्यांचा डेटा अद्ययावत (Update / Merge) करा</b></span>`;
+        } else {
+          replaceLabel.innerHTML = `<input type="checkbox" id="chkReplaceExisting" checked> <span><b>आधीचा डेटा पूर्णपणे नवीन डेटाने बदला</b> (Replace existing data)</span>`;
+        }
+      }
+
+      const textarea = document.getElementById('csvTextarea');
+      const fileInput = document.getElementById('csvFileInput');
+      if (fileInput) fileInput.value = '';
+      if (textarea && !textarea.value) {
+        textarea.placeholder = `येथे ${guide.title} चा CSV मजकूर पेस्ट करा...`;
+      }
+      updateCsvLineCount();
+    }
+
+    function fillSampleUploadTemplate() {
+      const guide = uploadDatasetGuides[currentUploadType];
+      const textarea = document.getElementById('csvTextarea');
+      if (guide && textarea) {
+        textarea.value = guide.sample.trim();
+        updateCsvLineCount();
+        const msg = document.getElementById('csvImportStatusMsg');
+        if (msg) {
+          msg.style.display = 'block';
+          msg.style.background = '#e6fffa';
+          msg.style.color = '#234e52';
+          msg.textContent = `📝 ${guide.title} चे नमुना टेम्पलेट भरले आहे. आपण यात बदल करून अपलोड करू शकता.`;
+        }
+      }
+    }
+
+    function updateCsvLineCount() {
+      const textarea = document.getElementById('csvTextarea');
+      const badge = document.getElementById('csvLineCountBadge');
+      if (!textarea || !badge) return;
+      const lines = textarea.value.split('\n').filter(l => l.trim().length > 0);
+      badge.textContent = `${lines.length} ओळी (Rows)`;
+    }
+
+    function handleCsvFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const textarea = document.getElementById('csvTextarea');
+        if (textarea) {
+          textarea.value = e.target.result;
+          updateCsvLineCount();
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function submitUniversalCsvImport(btn) {
+      const textarea = document.getElementById('csvTextarea');
+      const msg = document.getElementById('csvImportStatusMsg');
+      const replaceChk = document.getElementById('chkReplaceExisting');
+      const replaceExisting = replaceChk ? replaceChk.checked : true;
+      const csvText = (textarea ? textarea.value : '').trim();
+
+      if (!csvText) {
+        if (msg) {
+          msg.style.display = 'block';
+          msg.style.background = '#fff5f5';
+          msg.style.color = '#c53030';
+          msg.textContent = '⚠️ कृपया CSV मजकूर पेस्ट करा किंवा फाईल निवडा.';
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'इम्पोर्ट होत आहे... ⏳';
+      }
+      if (msg) {
+        msg.style.display = 'block';
+        msg.style.background = '#ebf8ff';
+        msg.style.color = '#2b6cb0';
+        msg.textContent = 'डेटा प्रक्रिया आणि प्रमाणीकरण सुरू आहे... ⏳';
+      }
+
+      const handleSuccess = res => {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🚀 डेटा इम्पोर्ट व सिंक करा (Upload & Process)';
+        }
+        if (res && res.success) {
+          if (msg) {
+            msg.style.background = '#f0fff4';
+            msg.style.color = '#276749';
+            msg.textContent = `✅ ${res.message}`;
+          }
+          setTimeout(() => {
+            closeCsvImportModal();
+            loadTablesData();
+            loadDashboard();
+            if (currentUploadType === 'master') {
+              loadMasterManagementData(true);
+            }
+          }, 1200);
+        } else {
+          if (msg) {
+            msg.style.background = '#fff5f5';
+            msg.style.color = '#c53030';
+            msg.textContent = `⚠️ त्रुटी: ${res ? res.message : 'अज्ञात त्रुटी'}`;
+          }
+        }
+      };
+
+      const handleFailure = err => {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🚀 डेटा इम्पोर्ट व सिंक करा (Upload & Process)';
+        }
+        if (msg) {
+          msg.style.background = '#fff5f5';
+          msg.style.color = '#c53030';
+          msg.textContent = `⚠️ सर्व्हर एरर: ${err.message}`;
+        }
+      };
+
+      if (currentUploadType === 'bsData') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importBsDataEntryCsv(csvText, replaceExisting);
+      } else if (currentUploadType === 'village') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importVillageDetailsCsv(csvText, replaceExisting);
+      } else if (currentUploadType === 'month') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importMonthMasterCsv(csvText);
+      } else if (currentUploadType === 'master') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importMasterDataCsv(csvText);
+      }
+    }
+
+    // ================= DEDICATED DATA UPLOAD & DATE VALIDATION COMPONENT STATE & LOGIC =================
+    window.uploadComponentState = {
+      activeDataset: 'bsData',
+      rawCsvText: '',
+      parsedRows: [],
+      validRows: [],
+      errorRows: [],
+      normalizedRows: [],
+      dateColumnName: 'दिनांक',
+      stats: {
+        totalRows: 0,
+        validDates: 0,
+        normalizedDates: 0,
+        invalidDates: 0
+      },
+      filterMode: 'all', // 'all' | 'valid' | 'errors'
+      isCommitted: false,
+      lastCommittedTime: null
+    };
+
+    const uploadCompDatasetGuides = {
+      bsData: {
+        title: '🩸 BsDataEntry (कर्मचारी रक्त नमुने नोंद)',
+        desc: 'स्तंभ: <b>BS ID, दिनांक, उपकेंद्र, कर्मचारी नाव, पद, BS Code, बंडल क्र., पासून, पर्यंत, एकूण</b><br>💡 <i>नियम: \'दिनांक\' स्तंभाचे मूल्य <b>dd-mm-yyyy</b> (उदा. 11-12-2025, 27-10-2025) स्वरूपात असणे आवश्यक आहे.</i>',
+        sample: `BS ID,दिनांक,उपकेंद्र,कर्मचारी नाव,पद,BS Code,बंडल क्र.,पासून,पर्यंत,एकूण
+BS_20251211_54F6V3_1,11-12-2025,आलमला,श्रीमती पुनम रावसाहेब काळे,आशा स्वयंसेविका (ASHA),54F6V3,B_2025_1,1,10,10
+BS_20251027_54S3_2,27-10-2025,भेटा,श्री परमेश्वर काळे,आरोग्य सेवक (MPW),54S3,B_2025_2,1,12,12
+BS_20250915_54F7_3,15-09-2025,लखनगाव,श्रीमती जगताप ए टी,आरोग्य सेविका (ANM),54F7,B_2025_3,1,8,8
+BS_20260105_54S4_4,05-01-2026,मंगरूळ,श्री शिंदे एस एम,आरोग्य सेवक (MPW),54S4,B_2026_1,1,14,14
+BS_20260218_54S1_5,18-02-2026,भादा,श्री सुर्यवंशी एस. आर.,आरोग्य सेवक (MPW),54S1,B_2026_2,1,15,15`
+      },
+      village: {
+        title: '🏡 VillageDetails (गावनिहाय रक्त नमुने तपशील)',
+        desc: 'स्तंभ: <b>BS ID, कर्मचारी नाव, दिनांक, गाव, एकूण नमुने, पुरुष, स्त्री, उपकेंद्र</b><br>💡 <i>नियम: \'दिनांक\' स्तंभाचे मूल्य <b>dd-mm-yyyy</b> (उदा. 11-12-2025, 27-10-2025) स्वरूपात असणे आवश्यक आहे.</i>',
+        sample: `BS ID,कर्मचारी नाव,दिनांक,गाव,एकूण नमुने,पुरुष,स्त्री,उपकेंद्र
+BS_VIL_1,श्रीमती पुनम रावसाहेब काळे,11-12-2025,आलमला,10,5,5,आलमला
+BS_VIL_2,श्री परमेश्वर काळे,27-10-2025,भेटा,12,6,6,भेटा
+BS_VIL_3,श्रीमती जगताप ए टी,15-09-2025,लखनगाव,8,4,4,लखनगाव
+BS_VIL_4,श्री शिंदे एस एम,05-01-2026,मंगरूळ,14,7,7,मंगरूळ
+BS_VIL_5,श्री सुर्यवंशी एस. आर.,18-02-2026,भादा,15,8,7,भादा`
+      },
+      month: {
+        title: '📅 MonthMaster (मासिक व पंधरवडा निर्देशांक)',
+        desc: 'स्तंभ: <b>महिना, नवीन OPD, प्र. नवीन OPD, MPW गृहभेटी, ANM गृहभेटी, आशा गृहभेटी, तापाचे रुग्ण, रक्त नमुणे, उपचारीत रुग्ण, क्लोरोक्वीन खर्च, FN1, FN2</b>',
+        sample: `महिना,नवीन OPD,प्र. नवीन OPD,MPW गृहभेटी,प्र. MPW गृहभेटी,ANM गृहभेटी,प्र. ANM गृहभेटी,आशा गृहभेटी,प्र. आशा गृहभेटी,तापाचे रुग्ण,प्र. तापाचे रुग्ण,रक्त नमुणे,प्र. रक्त नमुणे,उपचारीत रुग्ण,प्र. उपचारीत रुग्ण,क्लोरोक्वीन खर्च,प्र. क्लोरोक्वीन खर्च,FN1,FN2
+सप्टेंबर २०२६,2450,22000,1200,11000,980,8900,1450,13200,142,1250,138,1210,0,2,0,4,01/09/2026 ते 15/09/2026,16/09/2026 ते 30/09/2026
+ऑक्टोबर २०२६,2380,24380,1150,12150,920,9820,1390,14590,135,1385,130,1340,1,3,0,4,01/10/2026 ते 15/10/2026,16/10/2026 ते 31/10/2026`
+      },
+      master: {
+        title: '👥 MasterData (६५ कर्मचारी व कार्यक्षेत्र गावे)',
+        desc: 'स्तंभ: <b>उपकेंद्र, कर्मचारी नाव, पदनाम, Bs Code, गावांची यादी</b>',
+        sample: `उपकेंद्र,कर्मचारी नाव,पदनाम,Bs Code,गावांची यादी
+आलमला,श्रीमती पुनम रावसाहेब काळे,आशा स्वयंसेविका (ASHA),54F6V3,आलमला
+भेटा,श्री परमेश्वर काळे,आरोग्य सेवक (MPW),54S3,"भेटा, आंदोरा, वडजी, नाव्होली"
+लखनगाव,श्रीमती जगताप ए टी,आरोग्य सेविका (ANM),54F7,"लखनगांव, सत्तधरवाडी, उटी बु., सोनपट्टी तांडा"
+मंगरूळ,श्री शिंदे एस एम,आरोग्य सेवक (MPW),54S4,"मंगरूळ, कासार जवळगा, बोरगाव, हाळदुर्ग, शिंदेवाडी"`
+      }
+    };
+
+    function validateDateDdMmYyyyClient(rawDate, entryId = '') {
+      const str = String(rawDate || '').trim();
+      if (!str && !entryId) {
+        return {
+          isValid: false,
+          isStrictDdMmYyyy: false,
+          isAutoNormalized: false,
+          formattedDdMmYyyy: '',
+          errorMsg: 'तारीख रिकामी आहे'
+        };
+      }
+
+      // 1. Strict dd-mm-yyyy with 4-digit year
+      const strictPattern = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+      const strictMatch = str.match(strictPattern);
+      if (strictMatch) {
+        const day = parseInt(strictMatch[1], 10);
+        const month = parseInt(strictMatch[2], 10);
+        const year = parseInt(strictMatch[3], 10);
+
+        if (month < 1 || month > 12) {
+          return { isValid: false, isStrictDdMmYyyy: false, isAutoNormalized: false, formattedDdMmYyyy: '', errorMsg: `अवैध महिना (${month})` };
+        }
+        const daysInMonth = new Date(year, month, 0).getDate();
+        if (day < 1 || day > daysInMonth) {
+          return { isValid: false, isStrictDdMmYyyy: false, isAutoNormalized: false, formattedDdMmYyyy: '', errorMsg: `अवैध दिवस (${day})` };
+        }
+
+        const pad = n => String(n).padStart(2, '0');
+        return {
+          isValid: true,
+          isStrictDdMmYyyy: true,
+          isAutoNormalized: false,
+          formattedDdMmYyyy: `${pad(day)}-${pad(month)}-${year}`,
+          parsedDate: new Date(year, month - 1, day, 12, 0, 0),
+          errorMsg: ''
+        };
+      }
+
+      // 2. Named month (e.g. 25-Feb-2025, 7-Apr-2025)
+      const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+      const namedMatch = str.match(/^(\d{1,2})[-/ ]([A-Za-z]{3,})[-/ ](\d{2,4})$/);
+      if (namedMatch) {
+        const day = parseInt(namedMatch[1], 10);
+        const monStr = namedMatch[2].toLowerCase().slice(0, 3);
+        let year = parseInt(namedMatch[3], 10);
+        if (year < 100) year += 2000;
+        const month = MONTHS[monStr] !== undefined ? MONTHS[monStr] : -1;
+        if (month !== -1) {
+          const pad = n => String(n).padStart(2, '0');
+          const formatted = `${pad(day)}-${pad(month + 1)}-${year}`;
+          return {
+            isValid: true,
+            isStrictDdMmYyyy: false,
+            isAutoNormalized: true,
+            formattedDdMmYyyy: formatted,
+            parsedDate: new Date(year, month, day, 12, 0, 0),
+            errorMsg: `ऑटो-रूपांतरित: ${formatted}`
+          };
+        }
+      }
+
+      // 3. Slash format (e.g. 11/12/2025 or 27/10/2025)
+      if (str.includes('/')) {
+        const parts = str.split('/').map(p => p.trim());
+        if (parts.length === 3) {
+          let d = parseInt(parts[0], 10);
+          let m = parseInt(parts[1], 10);
+          let y = parseInt(parts[2], 10);
+          if (y < 100) y += 2000;
+          if (d > 12 && m <= 12) {
+            // definitely dd/mm/yyyy
+          } else if (m > 12 && d <= 12) {
+            const temp = d; d = m; m = temp;
+          }
+          if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+            const pad = n => String(n).padStart(2, '0');
+            const formatted = `${pad(d)}-${pad(m)}-${y}`;
+            return {
+              isValid: true,
+              isStrictDdMmYyyy: false,
+              isAutoNormalized: true,
+              formattedDdMmYyyy: formatted,
+              parsedDate: new Date(y, m - 1, d, 12, 0, 0),
+              errorMsg: `स्लॅश वरून ऑटो-रूपांतरित: ${formatted}`
+            };
+          }
+        }
+      }
+
+      // 4. Two digit year with hyphen (e.g. 11-12-25)
+      if (str.includes('-')) {
+        const parts = str.split('-').map(p => p.trim());
+        if (parts.length === 3) {
+          let d = parseInt(parts[0], 10);
+          let m = parseInt(parts[1], 10);
+          let y = parseInt(parts[2], 10);
+          if (parts[0].length === 4) {
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            d = parseInt(parts[2], 10);
+          } else if (y < 100) {
+            y += 2000;
+          }
+          if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+            const pad = n => String(n).padStart(2, '0');
+            const formatted = `${pad(d)}-${pad(m)}-${y}`;
+            return {
+              isValid: true,
+              isStrictDdMmYyyy: false,
+              isAutoNormalized: true,
+              formattedDdMmYyyy: formatted,
+              parsedDate: new Date(y, m - 1, d, 12, 0, 0),
+              errorMsg: `ऑटो-रूपांतरित: ${formatted}`
+            };
+          }
+        }
+      }
+
+      // Fallback check from entry ID (e.g. BS_20251211_54_1)
+      const idMatch = String(entryId || '').match(/BS_(\d{4})(\d{2})(\d{2})/);
+      if (idMatch) {
+        const y = parseInt(idMatch[1], 10);
+        const m = parseInt(idMatch[2], 10);
+        const d = parseInt(idMatch[3], 10);
+        const pad = n => String(n).padStart(2, '0');
+        const formatted = `${pad(d)}-${pad(m)}-${y}`;
+        return {
+          isValid: true,
+          isStrictDdMmYyyy: false,
+          isAutoNormalized: true,
+          formattedDdMmYyyy: formatted,
+          parsedDate: new Date(y, m - 1, d, 12, 0, 0),
+          errorMsg: `ID वरून काढलेली तारीख: ${formatted}`
+        };
+      }
+
+      return {
+        isValid: false,
+        isStrictDdMmYyyy: false,
+        isAutoNormalized: false,
+        formattedDdMmYyyy: '',
+        errorMsg: `अवैध तारीख: "${str}" (अपेक्षित: dd-mm-yyyy)`
+      };
+    }
+
+    function selectUploadCompDataset(type) {
+      window.uploadComponentState.activeDataset = type;
+      ['bsData', 'village', 'month', 'master'].forEach(t => {
+        const pillId = 'pillDs' + t.charAt(0).toUpperCase() + t.slice(1);
+        const pill = document.getElementById(pillId);
+        if (pill) {
+          if (t === type) pill.classList.add('active');
+          else pill.classList.remove('active');
+        }
+      });
+
+      const guide = uploadCompDatasetGuides[type];
+      const guideBox = document.getElementById('uploadCompGuideBox');
+      if (guideBox && guide) {
+        guideBox.innerHTML = `<b>${guide.title}</b><br>${guide.desc}`;
+      }
+
+      const replaceLabel = document.getElementById('uploadCompReplaceLabel');
+      if (replaceLabel) {
+        if (type === 'month') {
+          replaceLabel.innerHTML = `<input type="checkbox" id="uploadCompChkReplace" checked style="width:16px; height:16px;"> <span><b>विद्यमान महिन्यांचा डेटा अद्ययावत (Update / Merge) करा</b></span>`;
+        } else {
+          replaceLabel.innerHTML = `<input type="checkbox" id="uploadCompChkReplace" checked style="width:16px; height:16px;"> <span><b>आधीचा डेटा पूर्णपणे नवीन डेटाने बदला</b> (Replace existing dataset)</span>`;
+        }
+      }
+
+      const textarea = document.getElementById('uploadCompTextarea');
+      if (textarea && !textarea.value) {
+        textarea.placeholder = `येथे ${guide.title} चा CSV मजकूर पेस्ट करा...`;
+      }
+
+      parseAndValidateUploadCompCsv();
+    }
+
+    function fillUploadCompSampleTemplate() {
+      const guide = uploadCompDatasetGuides[window.uploadComponentState.activeDataset];
+      const textarea = document.getElementById('uploadCompTextarea');
+      if (guide && textarea) {
+        textarea.value = guide.sample.trim();
+        parseAndValidateUploadCompCsv();
+        showUploadCompStatus(`📝 ${guide.title} चे नमुना टेम्पलेट भरले आहे व दिनांक प्रमाणीकरण पूर्ण झाले!`, 'success');
+      }
+    }
+
+    function clearUploadCompTextarea() {
+      const textarea = document.getElementById('uploadCompTextarea');
+      if (textarea) textarea.value = '';
+      const fileInput = document.getElementById('uploadCompFileInput');
+      if (fileInput) fileInput.value = '';
+      parseAndValidateUploadCompCsv();
+      showUploadCompStatus('मजकूर पुसला गेला आहे.', 'info');
+    }
+
+    function onUploadCompInputChanged() {
+      parseAndValidateUploadCompCsv();
+    }
+
+    function handleUploadCompFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const textarea = document.getElementById('uploadCompTextarea');
+        if (textarea) {
+          textarea.value = e.target.result;
+          parseAndValidateUploadCompCsv();
+          showUploadCompStatus(`📁 फाईल "${file.name}" यशस्वीरित्या लोड केली! (${file.size} bytes)`, 'success');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function parseCsvLinesHelper(text) {
+      if (!text || typeof text !== 'string') return [];
+      const rawLines = text.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
+      return rawLines.map(line => {
+        let inQuotes = false;
+        let token = "";
+        const cols = [];
+        for (let j = 0; j < line.length; j++) {
+          const c = line[j];
+          if (c === '"') inQuotes = !inQuotes;
+          else if (c === ',' && !inQuotes) {
+            cols.push(token.trim());
+            token = "";
+          } else {
+            token += c;
+          }
+        }
+        cols.push(token.trim());
+        return cols;
+      });
+    }
+
+    function parseAndValidateUploadCompCsv() {
+      const textarea = document.getElementById('uploadCompTextarea');
+      const csvText = (textarea ? textarea.value : '').trim();
+      const lineBadge = document.getElementById('uploadCompLineCountBadge');
+      const datasetType = window.uploadComponentState.activeDataset;
+
+      window.uploadComponentState.rawCsvText = csvText;
+      window.uploadComponentState.isCommitted = false;
+
+      if (!csvText) {
+        if (lineBadge) lineBadge.textContent = '० ओळी (Rows)';
+        window.uploadComponentState.parsedRows = [];
+        window.uploadComponentState.validRows = [];
+        window.uploadComponentState.errorRows = [];
+        window.uploadComponentState.normalizedRows = [];
+        window.uploadComponentState.stats = { totalRows: 0, validDates: 0, normalizedDates: 0, invalidDates: 0 };
+        updateUploadCompKpiCounters();
+        renderUploadCompPreviewTable();
+        updateUploadCompStateSummary();
+        return;
+      }
+
+      const rows = parseCsvLinesHelper(csvText);
+      if (lineBadge) lineBadge.textContent = `${rows.length} ओळी (Rows)`;
+
+      if (rows.length < 2) {
+        renderUploadCompPreviewTable();
+        return;
+      }
+
+      const header = rows[0].map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+      
+      let idIdx = header.findIndex(c => c.includes('id') || c.includes('क्रमांक') || c.includes('अ.क्र.'));
+      let dateIdx = header.findIndex(c => c.includes('date') || c.includes('तारीख') || c.includes('दिनांक'));
+      let nameIdx = header.findIndex(c => c.includes('name') || c.includes('कर्मचारी') || c.includes('नाव'));
+      let upkendraIdx = header.findIndex(c => c.includes('upkendra') || c.includes('उपकेंद्र'));
+      let desigIdx = header.findIndex(c => c.includes('designation') || c.includes('पद') || c.includes('पदनाम'));
+      let codeIdx = header.findIndex(c => c.includes('code') || c.includes('कोड'));
+      let bundleIdx = header.findIndex(c => c.includes('bundle') || c.includes('बंडल'));
+      let totalIdx = header.findIndex(c => c.includes('total') || c.includes('एकूण') || c.includes('नमुने') || c.includes('sample'));
+      let villageIdx = header.findIndex(c => c.includes('गाव') || c.includes('village'));
+
+      if (datasetType === 'bsData') {
+        if (dateIdx === -1) dateIdx = 1;
+        if (upkendraIdx === -1) upkendraIdx = 2;
+        if (nameIdx === -1) nameIdx = 3;
+        if (desigIdx === -1) desigIdx = 4;
+        if (codeIdx === -1) codeIdx = 5;
+        if (bundleIdx === -1) bundleIdx = 6;
+        if (totalIdx === -1) totalIdx = 9;
+      } else if (datasetType === 'village') {
+        if (nameIdx === -1) nameIdx = 1;
+        if (dateIdx === -1) dateIdx = 2;
+        if (villageIdx === -1) villageIdx = 3;
+        if (totalIdx === -1) totalIdx = 4;
+        if (upkendraIdx === -1) upkendraIdx = 7;
+      }
+
+      const parsedRows = [];
+      const validRows = [];
+      const errorRows = [];
+      const normalizedRows = [];
+
+      let countValid = 0;
+      let countNorm = 0;
+      let countInvalid = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i].map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length === 0 || cols.every(c => !c)) continue;
+
+        const rawId = (idIdx !== -1 && cols[idIdx]) ? cols[idIdx] : `ROW_${i}`;
+        const rawDate = (dateIdx !== -1 && cols[dateIdx]) ? cols[dateIdx] : '';
+        const empName = (nameIdx !== -1 && cols[nameIdx]) ? cols[nameIdx] : (cols[1] || '-');
+        const upkendra = (upkendraIdx !== -1 && cols[upkendraIdx]) ? cols[upkendraIdx] : 'भादा';
+        const designation = (desigIdx !== -1 && cols[desigIdx]) ? cols[desigIdx] : '-';
+        const bsCode = (codeIdx !== -1 && cols[codeIdx]) ? cols[codeIdx] : '-';
+        const bundle = (bundleIdx !== -1 && cols[bundleIdx]) ? cols[bundleIdx] : (cols[villageIdx] || '-');
+        const total = (totalIdx !== -1 && cols[totalIdx]) ? cols[totalIdx] : '1';
+
+        // Validate Date strictly as dd-mm-yyyy
+        let dateValResult;
+        if (datasetType === 'bsData' || datasetType === 'village') {
+          dateValResult = validateDateDdMmYyyyClient(rawDate, rawId);
+        } else {
+          // Month/Master have month labels or no dates
+          dateValResult = { isValid: true, isStrictDdMmYyyy: true, isAutoNormalized: false, formattedDdMmYyyy: rawDate || '-', errorMsg: '' };
+        }
+
+        const record = {
+          rowNum: i,
+          id: rawId,
+          rawDate: rawDate || '(रिकामा)',
+          validation: dateValResult,
+          normalizedDate: dateValResult.formattedDdMmYyyy || '-',
+          upkendra,
+          empName,
+          designation,
+          bsCode,
+          bundle,
+          total,
+          rawCols: cols
+        };
+
+        parsedRows.push(record);
+
+        if (dateValResult.isValid) {
+          validRows.push(record);
+          if (dateValResult.isStrictDdMmYyyy) {
+            countValid++;
+          } else {
+            countNorm++;
+            normalizedRows.push(record);
+          }
+        } else {
+          countInvalid++;
+          errorRows.push(record);
+        }
+      }
+
+      window.uploadComponentState.parsedRows = parsedRows;
+      window.uploadComponentState.validRows = validRows;
+      window.uploadComponentState.errorRows = errorRows;
+      window.uploadComponentState.normalizedRows = normalizedRows;
+      window.uploadComponentState.stats = {
+        totalRows: parsedRows.length,
+        validDates: countValid,
+        normalizedDates: countNorm,
+        invalidDates: countInvalid
+      };
+
+      updateUploadCompKpiCounters();
+      renderUploadCompPreviewTable();
+      updateUploadCompStateSummary();
+    }
+
+    function updateUploadCompKpiCounters() {
+      const stats = window.uploadComponentState.stats;
+      const elTotal = document.getElementById('kpiUploadTotalRows');
+      const elValid = document.getElementById('kpiUploadValidDates');
+      const elNorm = document.getElementById('kpiUploadNormalizedDates');
+      const elInvalid = document.getElementById('kpiUploadInvalidDates');
+
+      if (elTotal) elTotal.textContent = stats.totalRows;
+      if (elValid) elValid.textContent = stats.validDates;
+      if (elNorm) elNorm.textContent = stats.normalizedDates;
+      if (elInvalid) elInvalid.textContent = stats.invalidDates;
+
+      const cntAll = document.getElementById('cntFilterAll');
+      const cntVal = document.getElementById('cntFilterValid');
+      const cntErr = document.getElementById('cntFilterErrors');
+      if (cntAll) cntAll.textContent = stats.totalRows;
+      if (cntVal) cntVal.textContent = stats.validDates + stats.normalizedDates;
+      if (cntErr) cntErr.textContent = stats.invalidDates;
+    }
+
+    function filterUploadCompPreview(mode) {
+      window.uploadComponentState.filterMode = mode;
+      ['All', 'Valid', 'Error'].forEach(m => {
+        const btn = document.getElementById(`btnFilter${m}Rows`);
+        if (btn) {
+          const match = (mode === 'all' && m === 'All') || (mode === 'valid' && m === 'Valid') || (mode === 'errors' && m === 'Error');
+          if (match) {
+            btn.className = 'sheet-btn';
+            btn.style.background = '#2b6cb0';
+            btn.style.color = '#fff';
+          } else {
+            btn.className = 'sheet-btn sheet-btn-secondary';
+            btn.style.background = '';
+            btn.style.color = '';
+          }
+        }
+      });
+      renderUploadCompPreviewTable();
+    }
+
+    function renderUploadCompPreviewTable() {
+      const tbody = document.getElementById('uploadCompPreviewTbody');
+      if (!tbody) return;
+
+      const records = window.uploadComponentState.parsedRows;
+      const search = (document.getElementById('uploadCompSearchInput')?.value || '').toLowerCase().trim();
+      const filterMode = window.uploadComponentState.filterMode;
+
+      if (!records || records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#a0aec0;">कोणत्याही नोंदी उपलब्ध नाहीत. वरील टेक्स्टबॉक्समध्ये CSV डेटा पेस्ट करा.</td></tr>`;
+        return;
+      }
+
+      const filtered = records.filter(r => {
+        if (filterMode === 'valid' && !r.validation.isValid) return false;
+        if (filterMode === 'errors' && r.validation.isValid) return false;
+        if (!search) return true;
+        return (
+          r.id.toLowerCase().includes(search) ||
+          r.rawDate.toLowerCase().includes(search) ||
+          r.normalizedDate.toLowerCase().includes(search) ||
+          r.empName.toLowerCase().includes(search) ||
+          r.upkendra.toLowerCase().includes(search) ||
+          r.bundle.toLowerCase().includes(search)
+        );
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:25px; color:#a0aec0;">फिल्टर किंवा सर्चनुसार कोणतीही नोंद सापडली नाही.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach((r, idx) => {
+        let badgeHtml = '';
+        let rowBg = '';
+
+        if (r.validation.isStrictDdMmYyyy) {
+          badgeHtml = `<span class="val-badge-valid">✓ वैध (dd-mm-yyyy)</span>`;
+        } else if (r.validation.isAutoNormalized) {
+          badgeHtml = `<span class="val-badge-norm" title="${r.validation.errorMsg}">⚡ ऑटो-दुरुस्त (Normalized)</span>`;
+          rowBg = 'style="background:#fefce8;"';
+        } else {
+          badgeHtml = `<span class="val-badge-invalid" title="${r.validation.errorMsg}">❌ अवैध: ${r.validation.errorMsg}</span>`;
+          rowBg = 'style="background:#fef2f2;"';
+        }
+
+        html += `<tr ${rowBg}>
+          <td>${idx + 1}</td>
+          <td><span style="font-family:monospace; font-size:11px; background:#f7fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">${r.id}</span></td>
+          <td><b>${r.rawDate}</b></td>
+          <td>${badgeHtml}</td>
+          <td style="font-family:monospace; font-weight:700; color:#2b6cb0;">${r.normalizedDate}</td>
+          <td><b>${r.upkendra}</b></td>
+          <td class="text-left font-semibold">${r.empName}</td>
+          <td><span class="badge-bundle">${r.bsCode || r.designation}</span></td>
+          <td>${r.bundle}</td>
+          <td style="font-weight:bold; color:#00796b; background:#f0fff4;">${r.total}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function updateUploadCompStateSummary() {
+      const badge = document.getElementById('uploadCompStateStatusBadge');
+      const text = document.getElementById('uploadCompStateSummaryText');
+      const state = window.uploadComponentState;
+      const validCount = state.validRows.length;
+      const errorCount = state.errorRows.length;
+
+      if (state.isCommitted) {
+        if (badge) {
+          badge.textContent = '✅ सिस्टीममध्ये सेव्ह (Committed & Synced)';
+          badge.style.background = '#def7ec';
+          badge.style.color = '#03543f';
+        }
+        if (text) {
+          text.innerHTML = `<b>${validCount}</b> नोंदी यशस्वीरित्या सिस्टीममध्ये सेव्ह केल्या आहेत. (शेवटचा वेळ: ${state.lastCommittedTime || 'आत्ताच'})`;
+        }
+      } else {
+        if (badge) {
+          badge.textContent = validCount > 0 ? `सज्ज (${validCount} वैध नोंदी)` : 'अप्रक्रियाकृत (No Data)';
+          badge.style.background = validCount > 0 ? '#ebf8ff' : '#edf2f7';
+          badge.style.color = validCount > 0 ? '#2b6cb0' : '#4a5568';
+        }
+        if (text) {
+          text.innerHTML = `स्टेटमध्ये <b>${validCount}</b> वैध नोंदी साठवण्यासाठी तयार आहेत. ${errorCount > 0 ? `<span style="color:#c53030;">(⚠️ ${errorCount} नोंदींमध्ये तारीख त्रुटी आहेत)</span>` : ''}`;
+        }
+      }
+    }
+
+    function showUploadCompStatus(msg, type) {
+      const el = document.getElementById('uploadCompStatusMsg');
+      if (!el) return;
+      el.style.display = 'block';
+      if (type === 'success') {
+        el.style.background = '#f0fff4';
+        el.style.color = '#276749';
+        el.style.border = '1px solid #9ae6b4';
+      } else if (type === 'error') {
+        el.style.background = '#fff5f5';
+        el.style.color = '#c53030';
+        el.style.border = '1px solid #feb2b2';
+      } else {
+        el.style.background = '#ebf8ff';
+        el.style.color = '#2b6cb0';
+        el.style.border = '1px solid #bee3f8';
+      }
+      el.innerHTML = msg;
+    }
+
+    function commitUploadCompState(btn) {
+      const state = window.uploadComponentState;
+      const rawText = state.rawCsvText;
+      const datasetType = state.activeDataset;
+      const replaceChk = document.getElementById('uploadCompChkReplace');
+      const replace = replaceChk ? replaceChk.checked : true;
+
+      if (!rawText || state.parsedRows.length === 0) {
+        showUploadCompStatus('⚠️ कृपया आधी CSV मजकूर भरा किंवा फाईल निवडा.', 'error');
+        return;
+      }
+
+      if (state.validRows.length === 0) {
+        showUploadCompStatus('⚠️ एकाही नोंदीमध्ये वैध तारीख सापडली नाही. कृपया दिनांक dd-mm-yyyy स्वरूपात तपासा.', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'स्टेट सेव्ह व सिंक होत आहे... ⏳';
+      }
+      showUploadCompStatus('🔄 सर्व नोंदी सिस्टीममध्ये सेव्ह व सिंक केल्या जात आहेत...', 'info');
+
+      const handleSuccess = res => {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '💾 सर्व वैध नोंदी स्टेट व सिस्टीममध्ये सेव्ह करा (Store & Sync)';
+        }
+        if (res && res.success) {
+          state.isCommitted = true;
+          state.lastCommittedTime = new Date().toLocaleTimeString('mr-IN');
+          updateUploadCompStateSummary();
+          showUploadCompStatus(`✅ <b>यशस्वी:</b> ${res.message} (वैध dd-mm-yyyy नोंदी: ${state.stats.validDates + state.stats.normalizedDates})`, 'success');
+          
+          // Refresh global data
+          loadTablesData();
+          loadDashboard();
+          if (datasetType === 'master') {
+            loadMasterManagementData(true);
+          }
+        } else {
+          showUploadCompStatus(`⚠️ त्रुटी: ${res ? res.message : 'अज्ञात त्रुटी'}`, 'error');
+        }
+      };
+
+      const handleFailure = err => {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '💾 सर्व वैध नोंदी स्टेट व सिस्टीममध्ये सेव्ह करा (Store & Sync)';
+        }
+        showUploadCompStatus(`⚠️ सर्व्हर एरर: ${err.message}`, 'error');
+      };
+
+      if (datasetType === 'bsData') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importBsDataEntryCsv(rawText, replace);
+      } else if (datasetType === 'village') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importVillageDetailsCsv(rawText, replace);
+      } else if (datasetType === 'month') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importMonthMasterCsv(rawText);
+      } else if (datasetType === 'master') {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFailure)
+          .importMasterDataCsv(rawText);
+      }
+    }
+
+    function exportValidatedUploadCsv() {
+      const state = window.uploadComponentState;
+      const validRows = state.validRows;
+      if (!validRows || validRows.length === 0) {
+        alert('डाऊनलोड करण्यासाठी कोणत्याही वैध नोंदी सापडल्या नाहीत.');
+        return;
+      }
+
+      let csvContent = "";
+      if (state.activeDataset === 'bsData') {
+        csvContent = "BS ID,दिनांक,उपकेंद्र,कर्मचारी नाव,पद,BS Code,बंडल क्र.,पासून,पर्यंत,एकूण\n";
+        validRows.forEach(r => {
+          csvContent += `"${r.id}","${r.normalizedDate}","${r.upkendra}","${r.empName}","${r.designation}","${r.bsCode}","${r.bundle}","${r.rawCols[7] || 1}","${r.rawCols[8] || 1}","${r.total}"\n`;
+        });
+      } else if (state.activeDataset === 'village') {
+        csvContent = "BS ID,कर्मचारी नाव,दिनांक,गाव,एकूण नमुने,पुरुष,स्त्री,उपकेंद्र\n";
+        validRows.forEach(r => {
+          csvContent += `"${r.id}","${r.empName}","${r.normalizedDate}","${r.bundle}","${r.total}","${r.rawCols[5] || ''}","${r.rawCols[6] || ''}","${r.upkendra}"\n`;
+        });
+      } else {
+        csvContent = state.rawCsvText;
+      }
+
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `validated_${state.activeDataset}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Initialize Dropzone Listeners on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropzone = document.getElementById('uploadCompDropzone');
+      if (dropzone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', e => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          if (files.length > 0) {
+            handleUploadCompFileSelected({ target: { files: files } });
+          }
+        }, false);
+      }
+
+      selectUploadCompDataset('bsData');
+    });
+
+    function confirmResetInitialData() {
+      if (!confirm('खात्री करा: आपण २०२६ मधील सर्व अधिकृत नमुने, ६५ कर्मचारी, ३० गावनिहाय तपशील आणि पंधरवडा/OPD/गृहभेटी डेटा पुन्हा लोड करू इच्छिता?')) {
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res && res.success) {
+            alert(`✅ ${res.message}`);
+            loadTablesData();
+            loadDashboard();
+            loadMonthList();
+          } else {
+            alert('⚠️ रीलोड अयशस्वी: ' + (res ? res.message : ''));
+          }
+        })
+        .withFailureHandler(err => {
+          alert('⚠️ सर्व्हर एरर: ' + err.message);
+        })
+        .seedInitialData();
     }
   </script>
 </body>
